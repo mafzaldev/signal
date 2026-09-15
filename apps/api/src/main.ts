@@ -1,8 +1,11 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
+import { env } from './env.js';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  await app.listen(process.env.PORT ?? 4000);
+  // Better Auth reads raw request bodies; its Nest module re-adds the JSON parser for other routes.
+  const app = await NestFactory.create(AppModule, { bodyParser: false });
+  app.enableShutdownHooks();
+  await app.listen(env.PORT);
 }
 await bootstrap();
