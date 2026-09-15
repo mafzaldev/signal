@@ -4,9 +4,10 @@ import { AuditModule } from './audit/audit.module.js';
 import { auth } from './auth/auth.js';
 import { DatabaseModule } from './database/database.module.js';
 import { HealthController } from './health/health.controller.js';
+import { ProjectsModule } from './projects/projects.module.js';
 
 @Module({
-  imports: [DatabaseModule, AuthModule.forRoot({ auth }), AuditModule],
+  imports: [DatabaseModule, AuthModule.forRoot({ auth }), AuditModule, ProjectsModule],
   controllers: [HealthController],
 })
 export class AppModule {}
