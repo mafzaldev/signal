@@ -36,6 +36,8 @@ pnpm --filter @feature-flags/api db:migrate
 pnpm dev
 ```
 
+Open http://localhost:3000, create an account and an organization. The dashboard proxies `/api/auth/*` to the API and reads `API_URL` (default `http://localhost:4000`) to reach it.
+
 ## Scripts
 
 | Command                                     | Does                                    |
