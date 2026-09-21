@@ -3,6 +3,8 @@
   "compilerOptions": {
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    // fetch, streams and timers have the same shape in Node and browsers.
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "noEmit": true
   },
   "include": ["src"]
