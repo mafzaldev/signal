@@ -6,9 +6,17 @@ import { DatabaseModule } from './database/database.module.js';
 import { FlagsModule } from './flags/flags.module.js';
 import { HealthController } from './health/health.controller.js';
 import { ProjectsModule } from './projects/projects.module.js';
+import { RedisModule } from './redis/redis.module.js';
 
 @Module({
-  imports: [DatabaseModule, AuthModule.forRoot({ auth }), AuditModule, ProjectsModule, FlagsModule],
+  imports: [
+    DatabaseModule,
+    RedisModule,
+    AuthModule.forRoot({ auth }),
+    AuditModule,
+    ProjectsModule,
+    FlagsModule,
+  ],
   controllers: [HealthController],
 })
 export class AppModule {}
