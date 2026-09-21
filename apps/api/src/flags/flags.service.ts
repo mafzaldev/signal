@@ -20,6 +20,7 @@ import type { Database, Transaction } from '../db/client.js';
 import { environment, flag, flagConfig } from '../db/schema/index.js';
 import { DB } from '../database/database.module.js';
 import { ProjectsService } from '../projects/projects.service.js';
+import { RulesetService } from '../ruleset/ruleset.service.js';
 import { BOOLEAN_VARIATIONS, defaultFlagConfig } from './flag-defaults.js';
 
 const configColumns = {
@@ -40,6 +41,7 @@ export class FlagsService {
     @Inject(DB) private readonly db: Database,
     private readonly projects: ProjectsService,
     private readonly audit: AuditService,
+    private readonly rulesets: RulesetService,
   ) {}
 
   /** Locks the flag row until the transaction ends, so concurrent edits apply one at a time. */
@@ -102,8 +104,9 @@ export class FlagsService {
 
   /** Creates the flag switched off in every environment. */
   async create(actor: Actor, projectKey: string, input: CreateFlagInput) {
+    let result;
     try {
-      return await this.db.transaction(async (tx) => {
+      result = await this.db.transaction(async (tx) => {
         const parent = await this.projects.requireProject(actor.organizationId, projectKey, tx);
         const [created] = await tx
           .insert(flag)
@@ -147,11 +150,13 @@ export class FlagsService {
       }
       throw error;
     }
+    await this.rulesets.flagChanged(result.id);
+    return result;
   }
 
   /** Changing variations bumps every environment's version, since evaluation results may change. */
-  update(actor: Actor, projectKey: string, flagKey: string, input: UpdateFlagInput) {
-    return this.db.transaction(async (tx) => {
+  async update(actor: Actor, projectKey: string, flagKey: string, input: UpdateFlagInput) {
+    const updated = await this.db.transaction(async (tx) => {
       const parent = await this.projects.requireProject(actor.organizationId, projectKey, tx);
       const before = await this.lockFlag(tx, parent.id, flagKey);
 
@@ -184,12 +189,19 @@ export class FlagsService {
       });
       return after!;
     });
+    // Only variations affect evaluation; name and description changes stay out of SDKs.
+    if (input.variations) await this.rulesets.flagChanged(updated.id);
+    return updated;
   }
 
   async delete(actor: Actor, projectKey: string, flagKey: string) {
-    await this.db.transaction(async (tx) => {
+    const configs = await this.db.transaction(async (tx) => {
       const parent = await this.projects.requireProject(actor.organizationId, projectKey, tx);
       const before = await this.lockFlag(tx, parent.id, flagKey);
+      const configs = await tx
+        .select({ environmentId: flagConfig.environmentId, version: flagConfig.version })
+        .from(flagConfig)
+        .where(eq(flagConfig.flagId, before.id));
       await tx.delete(flag).where(eq(flag.id, before.id));
 
       await this.audit.record(tx, actor, {
@@ -199,18 +211,20 @@ export class FlagsService {
         projectId: parent.id,
         before,
       });
+      return configs;
     });
+    await this.rulesets.flagDeleted(flagKey, configs);
   }
 
   /** Partial update of one environment's targeting; omitted fields stay as they are. */
-  updateConfig(
+  async updateConfig(
     actor: Actor,
     projectKey: string,
     flagKey: string,
     environmentKey: string,
     input: UpdateFlagConfigInput,
   ) {
-    return this.db.transaction(async (tx) => {
+    const updated = await this.db.transaction(async (tx) => {
       const parent = await this.projects.requireProject(actor.organizationId, projectKey, tx);
       const target = await this.lockFlag(tx, parent.id, flagKey);
       const env = await this.projects.requireEnvironment(parent.id, environmentKey, tx);
@@ -245,5 +259,7 @@ export class FlagsService {
       });
       return { ...after!, environmentKey: env.key };
     });
+    await this.rulesets.flagChanged(updated.flagId, [updated.environmentId]);
+    return updated;
   }
 }

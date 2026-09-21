@@ -7,6 +7,7 @@ import { FlagsModule } from './flags/flags.module.js';
 import { HealthController } from './health/health.controller.js';
 import { ProjectsModule } from './projects/projects.module.js';
 import { RedisModule } from './redis/redis.module.js';
+import { SdkModule } from './sdk/sdk.module.js';
 import { SdkKeysModule } from './sdk-keys/sdk-keys.module.js';
 
 @Module({
@@ -18,6 +19,7 @@ import { SdkKeysModule } from './sdk-keys/sdk-keys.module.js';
     ProjectsModule,
     FlagsModule,
     SdkKeysModule,
+    SdkModule,
   ],
   controllers: [HealthController],
 })
