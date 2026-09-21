@@ -156,3 +156,6 @@ export function variationRefsAreValid(config: VariationRefs, variationCount: num
   ];
   return indexes.every((i) => i < variationCount);
 }
+
+export const createSdkKeySchema = z.strictObject({ name: nameSchema });
+export type CreateSdkKeyInput = z.infer<typeof createSdkKeySchema>;
