@@ -120,3 +120,22 @@ export const auditLog = pgTable(
   },
   (table) => [index('audit_log_org_created_idx').on(table.organizationId, table.createdAt)],
 );
+
+/** Lets an SDK read one environment's flags. Only a hash of the key is stored. */
+export const sdkKey = pgTable(
+  'sdk_key',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    environmentId: uuid('environment_id')
+      .notNull()
+      .references(() => environment.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    /** `server` keys receive full rulesets. Client keys come with browser support. */
+    kind: text('kind').$type<'server'>().notNull().default('server'),
+    keyHash: text('key_hash').notNull().unique(),
+    /** First characters of the key, so people can tell keys apart. */
+    keyPrefix: text('key_prefix').notNull(),
+    createdAt: createdAt(),
+  },
+  (table) => [index('sdk_key_environment_id_idx').on(table.environmentId)],
+);

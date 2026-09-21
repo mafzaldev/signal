@@ -7,7 +7,7 @@ import { AuditService } from './audit.service.js';
 
 const auditQuerySchema = z.strictObject({
   projectKey: z.string().optional(),
-  entityType: z.enum(['project', 'environment', 'flag', 'flag_config']).optional(),
+  entityType: z.enum(['project', 'environment', 'flag', 'flag_config', 'sdk_key']).optional(),
   entityId: z.string().optional(),
   actorId: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(200).default(50),

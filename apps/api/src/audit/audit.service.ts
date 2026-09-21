@@ -5,7 +5,7 @@ import { auditLog, project } from '../db/schema/index.js';
 import type { Actor } from '../common/actor.decorator.js';
 import { DB } from '../database/database.module.js';
 
-export type AuditEntityType = 'project' | 'environment' | 'flag' | 'flag_config';
+export type AuditEntityType = 'project' | 'environment' | 'flag' | 'flag_config' | 'sdk_key';
 
 export interface AuditEntry {
   action: string;
