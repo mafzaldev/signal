@@ -4,7 +4,7 @@ import { api } from '@/lib/api';
 import { changedFields } from '@/lib/targeting';
 import type { AuditEntry, AuditPage, Member, Project } from '@/lib/types';
 
-const ENTITY_TYPES = ['project', 'environment', 'flag', 'flag_config'];
+const ENTITY_TYPES = ['project', 'environment', 'flag', 'flag_config', 'sdk_key'];
 
 function first(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;

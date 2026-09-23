@@ -77,3 +77,11 @@ export interface Member {
   role: string;
   user: { id: string; name: string; email: string };
 }
+
+export interface SdkKey {
+  id: string;
+  name: string;
+  kind: 'server';
+  keyPrefix: string;
+  createdAt: string;
+}

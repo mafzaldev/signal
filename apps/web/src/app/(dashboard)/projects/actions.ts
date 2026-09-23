@@ -4,7 +4,7 @@ import type { Variation } from '@feature-flags/core';
 import type { FlagKind, UpdateFlagConfigInput } from '@feature-flags/core/schemas';
 import { refresh } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { type ActionResult, api, toActionResult } from '@/lib/api';
+import { type ActionResult, api, ApiError, toActionResult } from '@/lib/api';
 import { parseVariations } from '@/lib/targeting';
 
 const json = (body: unknown) => JSON.stringify(body);
@@ -128,4 +128,33 @@ export async function updateFlagConfig(
   );
   refresh();
   return result;
+}
+
+export type CreateSdkKeyResult = { error?: string; ok?: boolean; key?: string } | undefined;
+
+/** Returns the full key, which the API only reveals once. */
+export async function createSdkKey(
+  projectKey: string,
+  environmentKey: string,
+  _: CreateSdkKeyResult,
+  form: FormData,
+): Promise<CreateSdkKeyResult> {
+  try {
+    const created = await api<{ key: string }>(
+      `/projects/${projectKey}/environments/${environmentKey}/sdk-keys`,
+      { method: 'POST', body: json({ name: text(form, 'name') }) },
+    );
+    refresh();
+    return { ok: true, key: created.key };
+  } catch (error) {
+    if (error instanceof ApiError) return { error: error.message };
+    throw error;
+  }
+}
+
+export async function revokeSdkKey(projectKey: string, environmentKey: string, id: string) {
+  await api(`/projects/${projectKey}/environments/${environmentKey}/sdk-keys/${id}`, {
+    method: 'DELETE',
+  });
+  refresh();
 }
