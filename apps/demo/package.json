@@ -1,0 +1,15 @@
+{
+  "name": "@feature-flags/demo",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Prints a flag's value and updates live when it changes",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.ts",
+    "lint": "eslint src",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@feature-flags/sdk": "workspace:*"
+  }
+}

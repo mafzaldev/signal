@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    // Node runs this file directly by stripping types, so only erasable syntax is allowed.
+    "erasableSyntaxOnly": true,
+    "types": ["node"]
+  },
+  "include": ["src"]
+}
