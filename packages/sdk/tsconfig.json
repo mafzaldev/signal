@@ -5,6 +5,8 @@
     "moduleResolution": "Bundler",
     // fetch, streams and timers have the same shape in Node and browsers.
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    // Only src/node.ts may use Node APIs; the main entry must stay browser-safe.
+    "types": ["node"],
     "noEmit": true
   },
   "include": ["src"]
