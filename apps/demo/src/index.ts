@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import { createClient } from '@feature-flags/sdk';
+import { fileStorage } from '@feature-flags/sdk/node';
 
 if (existsSync('.env')) process.loadEnvFile('.env');
 
@@ -18,14 +19,16 @@ const users = [
   { key: 'user-3', country: 'US' },
 ];
 
-const client = createClient({ sdkKey, baseUrl });
+// The cache lets the demo start with the last known flags even when the API is down.
+const client = createClient({ sdkKey, baseUrl, storage: fileStorage('.flags-cache.json') });
 
 function print(label: string) {
   const values = users.map((user) => {
     const { value, reason } = client.variationDetail(flagKey, user, null);
     return `${user.key}(${user.country})=${JSON.stringify(value)} [${reason.kind}]`;
   });
-  console.log(`${new Date().toISOString()} ${label}: ${values.join('  ')}`);
+  const source = client.getDataSource();
+  console.log(`${new Date().toISOString()} ${label} (from ${source}): ${values.join('  ')}`);
 }
 
 client.on('change', (key) => {
@@ -36,7 +39,7 @@ const ready = await client.waitForInitialization({ timeout: 5000 });
 print(ready ? `"${flagKey}" loaded` : 'not initialized yet, serving defaults');
 console.log('Toggle the flag in the dashboard; changes print here. Ctrl+C to quit.');
 
-process.on('SIGINT', () => {
-  client.close();
+process.on('SIGINT', async () => {
+  await client.close();
   process.exit(0);
 });
