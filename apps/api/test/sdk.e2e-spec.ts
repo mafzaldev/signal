@@ -39,7 +39,12 @@ describe('SDK keys and SDK API (e2e)', () => {
   });
 
   function connect(key = sdkKey) {
-    const client = createClient({ sdkKey: key, baseUrl, logger: { warn() {}, error() {} } });
+    const client = createClient({
+      sdkKey: key,
+      baseUrl,
+      logger: { warn() {}, error() {} },
+      initialReconnectDelayMs: 50,
+    });
     clients.push(client);
     return client;
   }
@@ -169,9 +174,58 @@ describe('SDK keys and SDK API (e2e)', () => {
     });
   });
 
+  describe('closing streams', () => {
+    const createKey = async (environmentKey: string, name: string) => {
+      const res = await api()
+        .post(`/projects/web/environments/${environmentKey}/sdk-keys`)
+        .set('Cookie', cookie)
+        .send({ name })
+        .expect(201);
+      return res.body as { id: string; key: string };
+    };
+    const rejected = (client: FlagsClient) =>
+      new Promise<string>((resolve) => client.on('error', (error) => resolve(error.message)));
+
+    it('ends the stream of a revoked key and leaves other keys connected', async () => {
+      const revoked = await createKey('production', 'Revoked');
+      const kept = await createKey('production', 'Kept');
+      const revokedClient = connect(revoked.key);
+      const keptClient = connect(kept.key);
+      await Promise.all([
+        revokedClient.waitForInitialization({ timeout: 2000 }),
+        keptClient.waitForInitialization({ timeout: 2000 }),
+      ]);
+
+      const error = rejected(revokedClient);
+      await api().delete(`${keysPath}/${revoked.id}`).set('Cookie', cookie).expect(204);
+      expect(await error).toBe('Invalid SDK key');
+
+      const changed = new Promise((resolve) => keptClient.on('change', resolve));
+      await toggle(false);
+      await toggle(true);
+      expect(await changed).toBe('new-checkout');
+    });
+
+    it('ends streams when their environment is deleted', async () => {
+      await api()
+        .post('/projects/web/environments')
+        .set('Cookie', cookie)
+        .send({ key: 'qa', name: 'QA' })
+        .expect(201);
+      const { key } = await createKey('qa', 'QA key');
+      const client = connect(key);
+      await client.waitForInitialization({ timeout: 2000 });
+
+      const error = rejected(client);
+      await api().delete('/projects/web/environments/qa').set('Cookie', cookie).expect(204);
+      expect(await error).toBe('Invalid SDK key');
+    });
+  });
+
   it('rejects a revoked key', async () => {
     const list = await api().get(keysPath).set('Cookie', cookie);
-    await api().delete(`${keysPath}/${list.body[0].id}`).set('Cookie', cookie).expect(204);
+    const original = list.body.find((k: { name: string }) => k.name === 'Backend');
+    await api().delete(`${keysPath}/${original.id}`).set('Cookie', cookie).expect(204);
     await api().get('/sdk/flags').set('Authorization', sdkKey).expect(401);
   });
 });

@@ -7,6 +7,7 @@ import type { Database } from '../db/client.js';
 import { sdkKey } from '../db/schema/index.js';
 import { DB } from '../database/database.module.js';
 import { ProjectsService } from '../projects/projects.service.js';
+import { RulesetService } from '../ruleset/ruleset.service.js';
 import { generateSdkKey } from './sdk-key-crypto.js';
 
 /** Everything but the hash. */
@@ -24,6 +25,7 @@ export class SdkKeysService {
     @Inject(DB) private readonly db: Database,
     private readonly projects: ProjectsService,
     private readonly audit: AuditService,
+    private readonly rulesets: RulesetService,
   ) {}
 
   async list(organizationId: string, projectKey: string, environmentKey: string) {
@@ -60,7 +62,7 @@ export class SdkKeysService {
   }
 
   async revoke(actor: Actor, projectKey: string, environmentKey: string, id: string) {
-    await this.db.transaction(async (tx) => {
+    const environmentId = await this.db.transaction(async (tx) => {
       const parent = await this.projects.requireProject(actor.organizationId, projectKey, tx);
       const env = await this.projects.requireEnvironment(parent.id, environmentKey, tx);
       const [before] = await tx
@@ -77,6 +79,8 @@ export class SdkKeysService {
         environmentId: env.id,
         before,
       });
+      return env.id;
     });
+    await this.rulesets.closeStreams([environmentId], id);
   }
 }

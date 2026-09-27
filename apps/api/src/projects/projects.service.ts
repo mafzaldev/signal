@@ -12,6 +12,7 @@ import type { Database, Transaction } from '../db/client.js';
 import { environment, flag, flagConfig, project } from '../db/schema/index.js';
 import { DB } from '../database/database.module.js';
 import { defaultFlagConfig } from '../flags/flag-defaults.js';
+import { RulesetService } from '../ruleset/ruleset.service.js';
 
 const DEFAULT_ENVIRONMENTS = [
   { key: 'development', name: 'Development' },
@@ -24,6 +25,7 @@ export class ProjectsService {
   constructor(
     @Inject(DB) private readonly db: Database,
     private readonly audit: AuditService,
+    private readonly rulesets: RulesetService,
   ) {}
 
   /**
@@ -117,9 +119,14 @@ export class ProjectsService {
     });
   }
 
+  /** Also ends SDK streams for the project's environments. */
   async delete(actor: Actor, key: string) {
-    await this.db.transaction(async (tx) => {
+    const environmentIds = await this.db.transaction(async (tx) => {
       const before = await this.requireProject(actor.organizationId, key, tx);
+      const environments = await tx
+        .select({ id: environment.id })
+        .from(environment)
+        .where(eq(environment.projectId, before.id));
       await tx.delete(project).where(eq(project.id, before.id));
 
       await this.audit.record(tx, actor, {
@@ -129,7 +136,9 @@ export class ProjectsService {
         projectId: before.id,
         before,
       });
+      return environments.map((e) => e.id);
     });
+    await this.rulesets.closeStreams(environmentIds);
   }
 
   /** Also gives every existing flag a switched-off config in the new environment. */
@@ -174,8 +183,9 @@ export class ProjectsService {
     }
   }
 
+  /** Also ends SDK streams for the environment. */
   async deleteEnvironment(actor: Actor, projectKey: string, environmentKey: string) {
-    await this.db.transaction(async (tx) => {
+    const environmentId = await this.db.transaction(async (tx) => {
       const parent = await this.requireProject(actor.organizationId, projectKey, tx);
       const before = await this.requireEnvironment(parent.id, environmentKey, tx);
       await tx.delete(environment).where(eq(environment.id, before.id));
@@ -188,6 +198,8 @@ export class ProjectsService {
         environmentId: before.id,
         before,
       });
+      return before.id;
     });
+    await this.rulesets.closeStreams([environmentId]);
   }
 }

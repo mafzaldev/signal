@@ -4,7 +4,7 @@ import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 import type { Response } from 'express';
 import { interval, Observable } from 'rxjs';
 import { RulesetService } from '../ruleset/ruleset.service.js';
-import { SdkEnvironment, SdkKeyGuard } from './sdk-key.guard.js';
+import { SdkEnvironment, SdkKeyGuard, SdkKeyId } from './sdk-key.guard.js';
 import { StreamHub } from './stream-hub.service.js';
 
 const HEARTBEAT_MS = 20_000;
@@ -42,15 +42,24 @@ export class SdkController {
    * whose version they already have.
    */
   @Sse('stream')
-  stream(@SdkEnvironment() environmentId: string): Observable<MessageEvent> {
+  stream(
+    @SdkEnvironment() environmentId: string,
+    @SdkKeyId() keyId: string,
+  ): Observable<MessageEvent> {
     return new Observable<MessageEvent>((subscriber) => {
       const send = (event: StreamEvent) => subscriber.next({ type: event.type, data: event.data });
       const pending: StreamEvent[] = [];
       let ready = false;
 
-      const live = this.hub
-        .events(environmentId)
-        .subscribe((event) => (ready ? send(event) : pending.push(event)));
+      const live = this.hub.events(environmentId).subscribe((message) => {
+        if (message.type === 'close') {
+          // The key was revoked or the environment deleted; the SDK's reconnect gets a 401.
+          if (!message.keyId || message.keyId === keyId) subscriber.complete();
+          return;
+        }
+        if (ready) send(message);
+        else pending.push(message);
+      });
       const heartbeat = interval(HEARTBEAT_MS).subscribe(() =>
         subscriber.next({ type: 'ping', data: '' }),
       );

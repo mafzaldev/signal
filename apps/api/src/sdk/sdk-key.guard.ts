@@ -15,6 +15,7 @@ import { hashSdkKey } from '../sdk-keys/sdk-key-crypto.js';
 interface SdkRequest {
   headers: Record<string, string | string[] | undefined>;
   sdkEnvironmentId?: string;
+  sdkKeyId?: string;
 }
 
 /** Accepts `Authorization: <key>` or `Authorization: Bearer <key>`. */
@@ -29,12 +30,13 @@ export class SdkKeyGuard implements CanActivate {
     if (!key) throw new UnauthorizedException('Missing SDK key');
 
     const [row] = await this.db
-      .select({ environmentId: sdkKey.environmentId })
+      .select({ id: sdkKey.id, environmentId: sdkKey.environmentId })
       .from(sdkKey)
       .where(eq(sdkKey.keyHash, hashSdkKey(key)));
     if (!row) throw new UnauthorizedException('Invalid SDK key');
 
     request.sdkEnvironmentId = row.environmentId;
+    request.sdkKeyId = row.id;
     return true;
   }
 }
@@ -43,4 +45,9 @@ export class SdkKeyGuard implements CanActivate {
 export const SdkEnvironment = createParamDecorator(
   (_: unknown, ctx: ExecutionContext) =>
     ctx.switchToHttp().getRequest<SdkRequest>().sdkEnvironmentId!,
+);
+
+/** The id of the request's SDK key. Use behind `SdkKeyGuard`. */
+export const SdkKeyId = createParamDecorator(
+  (_: unknown, ctx: ExecutionContext) => ctx.switchToHttp().getRequest<SdkRequest>().sdkKeyId!,
 );

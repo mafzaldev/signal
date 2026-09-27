@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
 import { AuditModule } from '../audit/audit.module.js';
 import { ProjectsModule } from '../projects/projects.module.js';
+import { RulesetModule } from '../ruleset/ruleset.module.js';
 import { SdkKeysController } from './sdk-keys.controller.js';
 import { SdkKeysService } from './sdk-keys.service.js';
 
 @Module({
-  imports: [AuditModule, ProjectsModule],
+  imports: [AuditModule, ProjectsModule, RulesetModule],
   controllers: [SdkKeysController],
   providers: [SdkKeysService],
 })

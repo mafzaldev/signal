@@ -11,6 +11,17 @@ import { REDIS } from '../redis/redis.module.js';
 const CACHE_TTL_SECONDS = 60 * 60;
 
 export const streamChannel = (environmentId: string) => `env:${environmentId}`;
+
+/**
+ * Tells API instances to end SSE connections, for one key or a whole
+ * environment. Handled by the API, never sent to SDKs.
+ */
+export interface CloseStreams {
+  type: 'close';
+  keyId?: string;
+}
+
+export type ChannelMessage = StreamEvent | CloseStreams;
 // Each change bumps the generation, so a ruleset built from data read before the
 // change can only ever be cached under the old (no longer read) generation.
 const generationKey = (environmentId: string) => `ruleset-gen:${environmentId}`;
@@ -106,7 +117,16 @@ export class RulesetService {
     return this.redis.incr(generationKey(environmentId));
   }
 
-  private publish(environmentId: string, event: StreamEvent) {
+  /** Ends open streams after a key is revoked or its environment deleted. */
+  async closeStreams(environmentIds: string[], keyId?: string) {
+    await this.notify(async () => {
+      for (const environmentId of environmentIds) {
+        await this.publish(environmentId, { type: 'close', keyId });
+      }
+    });
+  }
+
+  private publish(environmentId: string, event: ChannelMessage) {
     return this.redis.publish(streamChannel(environmentId), JSON.stringify(event));
   }
 
