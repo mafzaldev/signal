@@ -51,14 +51,18 @@ export class SdkController {
       const pending: StreamEvent[] = [];
       let ready = false;
 
-      const live = this.hub.events(environmentId).subscribe((message) => {
-        if (message.type === 'close') {
-          // The key was revoked or the environment deleted; the SDK's reconnect gets a 401.
-          if (!message.keyId || message.keyId === keyId) subscriber.complete();
-          return;
-        }
-        if (ready) send(message);
-        else pending.push(message);
+      const live = this.hub.events(environmentId).subscribe({
+        next: (message) => {
+          if (message.type === 'close') {
+            // The key was revoked or the environment deleted; the SDK's reconnect gets a 401.
+            if (!message.keyId || message.keyId === keyId) subscriber.complete();
+            return;
+          }
+          if (ready) send(message);
+          else pending.push(message);
+        },
+        // The hub completes on shutdown.
+        complete: () => subscriber.complete(),
       });
       const heartbeat = interval(HEARTBEAT_MS).subscribe(() =>
         subscriber.next({ type: 'ping', data: '' }),
