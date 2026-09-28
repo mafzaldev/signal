@@ -46,10 +46,13 @@ Create an SDK key in the dashboard (project settings → SDK keys), then:
 
 ```ts
 import { createClient } from '@feature-flags/sdk';
+import { fileStorage } from '@feature-flags/sdk/node';
 
 const flags = createClient({
   sdkKey: process.env.FLAGS_SDK_KEY!,
   baseUrl: 'http://localhost:4000',
+  // Optional: keep the last known flags so the app can start while the API is down.
+  storage: fileStorage('.flags-cache.json'),
 });
 await flags.waitForInitialization({ timeout: 3000 });
 
@@ -61,7 +64,9 @@ flags.on('change', (key) => console.log(`${key} changed`));
 
 Flags are evaluated locally from a ruleset the SDK downloads and keeps up to date over Server-Sent Events. Until it loads, or for unknown flags and values of the wrong type, each call returns the default you pass.
 
-To try it, run `FLAGS_SDK_KEY=<key> pnpm --filter @feature-flags/demo start` and toggle `new-checkout` in the dashboard.
+If the API is unreachable, the SDK keeps serving the last flags it had (from memory, or from `storage` on a cold start) and reconnects with exponential backoff and jitter. If streaming keeps failing, for example behind a proxy that blocks SSE, it polls `GET /sdk/flags` between attempts, using the ETag so unchanged flags cost a `304`. A stream that goes quiet for 60 seconds, missing its heartbeats, is reopened. Set `streaming: false` to poll every `pollIntervalMs` (30s) instead.
+
+To try it, run `FLAGS_SDK_KEY=<key> pnpm --filter @feature-flags/demo start` and toggle `new-checkout` in the dashboard. Stop the API and start the demo again: it still prints the last values, from its cache.
 
 ## Scripts
 
