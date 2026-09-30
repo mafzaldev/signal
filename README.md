@@ -1,20 +1,29 @@
 # Feature Flags
 
-A feature-flag service: a NestJS API, a Next.js dashboard, and a TypeScript SDK. See [PLAN.md](PLAN.md).
+A self-hosted feature flag service. Teams create projects and flags in a dashboard, roll them out to specific users or a percentage of traffic, and apps read them through a TypeScript SDK that updates live and keeps working when the service is down.
 
-## Layout
+- **Targeting**: turn flags on per environment, target individual users, write rules on user attributes ("country is PK and plan is not free"), and roll out by percentage with sticky, deterministic bucketing.
+- **Live updates**: a change in the dashboard reaches running apps in under a second over Server-Sent Events, across any number of API instances.
+- **Resilient SDK**: flags are evaluated in-process with no network call per check. If the API goes down, apps keep the flags they have and can even start from a disk cache.
+- **Teams**: organizations with owner, admin, member and viewer roles; every change is recorded in an audit log with before and after snapshots.
+- **Typed end to end**: one evaluation engine and one set of Zod schemas shared by the API, the dashboard and the SDK.
 
+## How it works
+
+```mermaid
+flowchart LR
+  dash["Dashboard<br/>Next.js"] -- "manage flags" --> api["API<br/>NestJS"]
+  api -- "change + audit row" --> pg[("Postgres")]
+  api -- "publish change" --> redis[("Redis")]
+  redis -- "to every API instance" --> api
+  api -- "SSE stream" --> sdk["Your app<br/>+ SDK"]
 ```
-apps/api        NestJS API (port 4000)
-apps/web        Next.js dashboard (port 3000)
-apps/demo       Node script that prints a flag live via the SDK
-packages/core   flag evaluation engine + shared types
-packages/sdk    npm SDK
-```
 
-## Getting started
+The dashboard calls the API, which saves each change together with its audit entry, then publishes it through Redis. Every API instance forwards it to the SDKs connected to it, and each SDK evaluates flags locally from the rules it holds. [docs/architecture.md](docs/architecture.md) has the full picture.
 
-Requires Node 24, pnpm 11, and Docker.
+## Quick start
+
+Requires Node 24, pnpm 11 and Docker.
 
 ```sh
 pnpm install
@@ -31,18 +40,23 @@ BETTER_AUTH_URL=http://localhost:4000
 TRUSTED_ORIGINS=http://localhost:3000
 ```
 
-Then apply migrations and start everything:
+Apply migrations and start everything:
 
 ```sh
 pnpm --filter @feature-flags/api db:migrate
 pnpm dev
 ```
 
-Open http://localhost:3000, create an account and an organization. The dashboard proxies `/api/auth/*` to the API and reads `API_URL` (default `http://localhost:4000`) to reach it.
+Then:
+
+1. Open http://localhost:3000, create an account and an organization.
+2. Create a project, then a flag called `new-checkout`.
+3. In the project's settings, create an SDK key for `production`.
+4. Run the demo: `FLAGS_SDK_KEY=<key> pnpm --filter @feature-flags/demo start`
+5. Toggle `new-checkout` in production. The demo prints the new values within a second.
+6. Stop the API and start the demo again: it still prints the last values, from its cache.
 
 ## Using the SDK
-
-Create an SDK key in the dashboard (project settings → SDK keys), then:
 
 ```ts
 import { createClient } from '@feature-flags/sdk';
@@ -51,7 +65,6 @@ import { fileStorage } from '@feature-flags/sdk/node';
 const flags = createClient({
   sdkKey: process.env.FLAGS_SDK_KEY!,
   baseUrl: 'http://localhost:4000',
-  // Optional: keep the last known flags so the app can start while the API is down.
   storage: fileStorage('.flags-cache.json'),
 });
 await flags.waitForInitialization({ timeout: 3000 });
@@ -59,24 +72,48 @@ await flags.waitForInitialization({ timeout: 3000 });
 if (flags.boolVariation('new-checkout', { key: user.id, country: user.country }, false)) {
   // new checkout
 }
-flags.on('change', (key) => console.log(`${key} changed`));
 ```
 
-Flags are evaluated locally from a ruleset the SDK downloads and keeps up to date over Server-Sent Events. Until it loads, or for unknown flags and values of the wrong type, each call returns the default you pass.
+See the [SDK README](packages/sdk/README.md) for every option and method.
 
-If the API is unreachable, the SDK keeps serving the last flags it had (from memory, or from `storage` on a cold start) and reconnects with exponential backoff and jitter. If streaming keeps failing, for example behind a proxy that blocks SSE, it polls `GET /sdk/flags` between attempts, using the ETag so unchanged flags cost a `304`. A stream that goes quiet for 60 seconds, missing its heartbeats, is reopened. Set `streaming: false` to poll every `pollIntervalMs` (30s) instead.
+## Documentation
 
-To try it, run `FLAGS_SDK_KEY=<key> pnpm --filter @feature-flags/demo start` and toggle `new-checkout` in the dashboard. Stop the API and start the demo again: it still prints the last values, from its cache.
+| Document                             | Covers                                                                                                |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| [Glossary](docs/glossary.md)         | Plain definitions of every term used in the project                                                   |
+| [Architecture](docs/architecture.md) | Components, tenancy and roles, how changes propagate, caching, streams, the SDK's connection handling |
+| [Evaluation](docs/evaluation.md)     | The order of checks, condition operators, segments and percentage rollouts                            |
+| [API reference](docs/api.md)         | Authentication, management endpoints, the audit log and the SDK protocol                              |
+| [SDK](packages/sdk/README.md)        | Installing and using the SDK                                                                          |
+| [Development](docs/development.md)   | Setup, environment variables, migrations, tests, CI and troubleshooting                               |
+| [Plan](PLAN.md)                      | The roadmap and decisions behind the project                                                          |
+
+## Repository layout
+
+```
+apps/api        NestJS API (port 4000)
+apps/web        Next.js dashboard (port 3000)
+apps/demo       Node script that prints a flag live via the SDK
+packages/core   Evaluation engine, shared types and schemas
+packages/sdk    The SDK
+docs/           Documentation
+```
 
 ## Scripts
 
-| Command                                     | Does                                    |
-| ------------------------------------------- | --------------------------------------- |
-| `pnpm dev`                                  | Run every app and package in watch mode |
-| `pnpm build`                                | Build everything                        |
-| `pnpm lint`                                 | ESLint                                  |
-| `pnpm typecheck`                            | TypeScript                              |
-| `pnpm test`                                 | Unit tests (Vitest)                     |
-| `pnpm --filter @feature-flags/api test:e2e` | API end-to-end tests                    |
-| `pnpm format`                               | Prettier                                |
-| `pnpm db:down`                              | Stop Postgres and Redis                 |
+| Command                                     | Does                                      |
+| ------------------------------------------- | ----------------------------------------- |
+| `pnpm dev`                                  | Runs everything in watch mode             |
+| `pnpm build`                                | Builds everything                         |
+| `pnpm lint`                                 | ESLint                                    |
+| `pnpm typecheck`                            | TypeScript                                |
+| `pnpm test`                                 | Unit tests                                |
+| `pnpm --filter @feature-flags/api test:e2e` | API end-to-end tests (needs `pnpm db:up`) |
+| `pnpm format`                               | Prettier                                  |
+| `pnpm db:down`                              | Stops Postgres and Redis                  |
+
+If `pnpm dev` fails with a file watcher error, see [Troubleshooting](docs/development.md#troubleshooting).
+
+## Status
+
+Done: the evaluation engine, the API with authentication, roles and the audit log, the dashboard, SDK keys, live updates, and the SDK's offline cache and fallbacks. Next: publishing the SDK to npm, segments and browser support, then deployment and load testing. A/B testing with AI-written result summaries comes after that. See [PLAN.md](PLAN.md).
