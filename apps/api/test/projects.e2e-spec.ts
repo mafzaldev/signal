@@ -27,6 +27,20 @@ describe('projects (e2e)', () => {
     await api().get('/projects').set('Cookie', noOrg).expect(403);
   });
 
+  it('starts new sessions in the user’s organization', async () => {
+    const { email, organizationId } = await signUpWithOrganization(app, 'session-start');
+    const signIn = await api()
+      .post('/api/auth/sign-in/email')
+      .send({ email, password: 'password-123456' })
+      .expect(200);
+    const setCookies = (signIn.headers['set-cookie'] ?? []) as unknown as string[];
+    const session = await api()
+      .get('/api/auth/get-session')
+      .set('Cookie', setCookies.map((c) => c.split(';')[0]).join('; '))
+      .expect(200);
+    expect(session.body.session.activeOrganizationId).toBe(organizationId);
+  });
+
   it('creates a project with default environments', async () => {
     const res = await api()
       .post('/projects')

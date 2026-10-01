@@ -1,6 +1,7 @@
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import { betterAuth } from 'better-auth';
 import { organization } from 'better-auth/plugins';
+import { asc, eq } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import * as schema from '../db/schema/index.js';
 import { env } from '../env.js';
@@ -13,6 +14,23 @@ export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: 'pg', schema }),
   emailAndPassword: { enabled: true },
   plugins: [organization({ ac, roles })],
+  databaseHooks: {
+    session: {
+      create: {
+        // New sessions start in the user's oldest organization instead of none,
+        // so signing in lands on the dashboard rather than onboarding.
+        before: async (session) => {
+          const [membership] = await db
+            .select({ organizationId: schema.member.organizationId })
+            .from(schema.member)
+            .where(eq(schema.member.userId, session.userId))
+            .orderBy(asc(schema.member.createdAt))
+            .limit(1);
+          return { data: { ...session, activeOrganizationId: membership?.organizationId ?? null } };
+        },
+      },
+    },
+  },
 });
 
 export type Auth = typeof auth;
