@@ -64,7 +64,7 @@ export class FlagsService {
       .orderBy(asc(environment.createdAt));
   }
 
-  /** Each flag with a per-environment on/off summary. */
+  /** Each flag with its targeting in every environment, enough to summarize it in a list. */
   async list(organizationId: string, projectKey: string) {
     const parent = await this.projects.requireProject(organizationId, projectKey);
     const flags = await this.db
@@ -77,6 +77,10 @@ export class FlagsService {
         flagId: flagConfig.flagId,
         environmentKey: environment.key,
         enabled: flagConfig.enabled,
+        offVariation: flagConfig.offVariation,
+        targets: flagConfig.targets,
+        rules: flagConfig.rules,
+        fallthrough: flagConfig.fallthrough,
         version: flagConfig.version,
       })
       .from(flagConfig)
@@ -88,7 +92,15 @@ export class FlagsService {
       ...f,
       environments: configs
         .filter((c) => c.flagId === f.id)
-        .map(({ environmentKey, enabled, version }) => ({ environmentKey, enabled, version })),
+        .map((c) => ({
+          environmentKey: c.environmentKey,
+          enabled: c.enabled,
+          offVariation: c.offVariation,
+          targets: c.targets,
+          rules: c.rules,
+          fallthrough: c.fallthrough,
+          version: c.version,
+        })),
     }));
   }
 
@@ -254,8 +266,9 @@ export class FlagsService {
         entityId: target.id,
         projectId: parent.id,
         environmentId: env.id,
-        before,
-        after,
+        // Keys make the entry readable after the flag or environment is renamed or deleted.
+        before: { ...before, flagKey, environmentKey: env.key },
+        after: { ...after!, flagKey, environmentKey: env.key },
       });
       return { ...after!, environmentKey: env.key };
     });

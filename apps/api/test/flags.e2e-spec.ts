@@ -70,6 +70,10 @@ describe('flags (e2e)', () => {
     expect(res.body[1].environments[0]).toEqual({
       environmentKey: 'development',
       enabled: false,
+      offVariation: 1,
+      targets: [],
+      rules: [],
+      fallthrough: { variation: 0 },
       version: 1,
     });
   });

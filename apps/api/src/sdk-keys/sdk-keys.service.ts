@@ -55,7 +55,7 @@ export class SdkKeysService {
         entityId: created!.id,
         projectId: parent.id,
         environmentId: env.id,
-        after: created,
+        after: { ...created!, environmentKey: env.key },
       });
       return { ...created!, key };
     });
@@ -77,7 +77,7 @@ export class SdkKeysService {
         entityId: before.id,
         projectId: parent.id,
         environmentId: env.id,
-        before,
+        before: { ...before, environmentKey: env.key },
       });
       return env.id;
     });
