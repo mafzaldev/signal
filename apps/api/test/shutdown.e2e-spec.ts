@@ -1,4 +1,4 @@
-import { createClient } from '@feature-flags/sdk';
+import { createClient } from '@mafzaldev/signal';
 import request from 'supertest';
 import { createApp, signUpWithOrganization } from './helpers.js';
 

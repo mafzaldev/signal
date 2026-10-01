@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
-import { createClient } from '@feature-flags/sdk';
-import { fileStorage } from '@feature-flags/sdk/node';
+import { createClient } from '@mafzaldev/signal';
+import { fileStorage } from '@mafzaldev/signal/node';
 
 if (existsSync('.env')) process.loadEnvFile('.env');
 

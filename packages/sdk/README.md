@@ -1,6 +1,6 @@
-# @feature-flags/sdk
+# @mafzaldev/signal
 
-Server-side TypeScript SDK for the feature flag service. It downloads an environment's flags, keeps them up to date over Server-Sent Events, and evaluates them in your process, so checking a flag never makes a network call. If the flag service goes down, your app keeps serving the last flags it had, even across restarts.
+Server-side TypeScript SDK for Signal, a self-hosted feature flag service. It downloads an environment's flags, keeps them up to date over Server-Sent Events, and evaluates them in your process, so checking a flag never makes a network call. If the flag service goes down, your app keeps serving the last flags it had, even across restarts.
 
 - No dependencies
 - ESM and CommonJS, with TypeScript types
@@ -9,7 +9,7 @@ Server-side TypeScript SDK for the feature flag service. It downloads an environ
 ## Install
 
 ```sh
-npm install @feature-flags/sdk
+npm install @mafzaldev/signal
 ```
 
 ## Quick start
@@ -17,8 +17,8 @@ npm install @feature-flags/sdk
 Create an SDK key for an environment in the dashboard (project settings → SDK keys), then:
 
 ```ts
-import { createClient } from '@feature-flags/sdk';
-import { fileStorage } from '@feature-flags/sdk/node';
+import { createClient } from '@mafzaldev/signal';
+import { fileStorage } from '@mafzaldev/signal/node';
 
 const flags = createClient({
   sdkKey: process.env.FLAGS_SDK_KEY!,
@@ -57,18 +57,18 @@ Values can be strings, numbers, booleans, or arrays of those.
 createClient(options);
 ```
 
-| Option                    | Default        | Description                                                                                                                                                 |
-| ------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `sdkKey`                  | required       | The environment's SDK key                                                                                                                                   |
-| `baseUrl`                 | required       | URL of the flags API                                                                                                                                        |
-| `storage`                 | none           | Where to keep the last known flags so the app can start while the API is down. Use `fileStorage(path)` from `@feature-flags/sdk/node`, or your own adapter. |
-| `streaming`               | `true`         | Receive changes live over SSE. When `false`, poll every `pollIntervalMs` instead.                                                                           |
-| `pollIntervalMs`          | `30000`        | Polling interval when `streaming` is `false`                                                                                                                |
-| `streamTimeoutMs`         | `60000`        | Reconnect if nothing, not even a heartbeat, arrives for this long                                                                                           |
-| `initialReconnectDelayMs` | `1000`         | First reconnect delay                                                                                                                                       |
-| `maxReconnectDelayMs`     | `30000`        | Longest reconnect delay                                                                                                                                     |
-| `fetch`                   | global `fetch` | Custom fetch implementation                                                                                                                                 |
-| `logger`                  | `console`      | Receives `warn` and `error` messages                                                                                                                        |
+| Option                    | Default        | Description                                                                                                                                                |
+| ------------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sdkKey`                  | required       | The environment's SDK key                                                                                                                                  |
+| `baseUrl`                 | required       | URL of the flags API                                                                                                                                       |
+| `storage`                 | none           | Where to keep the last known flags so the app can start while the API is down. Use `fileStorage(path)` from `@mafzaldev/signal/node`, or your own adapter. |
+| `streaming`               | `true`         | Receive changes live over SSE. When `false`, poll every `pollIntervalMs` instead.                                                                          |
+| `pollIntervalMs`          | `30000`        | Polling interval when `streaming` is `false`                                                                                                               |
+| `streamTimeoutMs`         | `60000`        | Reconnect if nothing, not even a heartbeat, arrives for this long                                                                                          |
+| `initialReconnectDelayMs` | `1000`         | First reconnect delay                                                                                                                                      |
+| `maxReconnectDelayMs`     | `30000`        | Longest reconnect delay                                                                                                                                    |
+| `fetch`                   | global `fetch` | Custom fetch implementation                                                                                                                                |
+| `logger`                  | `console`      | Receives `warn` and `error` messages                                                                                                                       |
 
 ## Reading flags
 
@@ -128,11 +128,11 @@ The cache stores the flags and the first 12 characters of the SDK key, never the
 Any object with `get` and `set` works; both can be sync or async:
 
 ```ts
-import type { FlagStorage } from '@feature-flags/sdk';
+import type { FlagStorage } from '@mafzaldev/signal';
 
 const redisStorage: FlagStorage = {
-  get: () => redis.get('feature-flags-cache'),
-  set: (value) => redis.set('feature-flags-cache', value).then(() => {}),
+  get: () => redis.get('signal-flags-cache'),
+  set: (value) => redis.set('signal-flags-cache', value).then(() => {}),
 };
 ```
 

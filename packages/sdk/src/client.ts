@@ -8,7 +8,7 @@ import {
   type Ruleset,
   type Segment,
   type StreamEvent,
-} from '@feature-flags/core';
+} from '@signal/core';
 import { parseSse } from './sse.js';
 import { type FlagStorage, parseCache, serializeCache } from './storage.js';
 
@@ -25,7 +25,7 @@ export interface ClientOptions {
   pollIntervalMs?: number;
   /**
    * Keeps the last known flags so the app can start while the API is down,
-   * e.g. `fileStorage()` from `@feature-flags/sdk/node`.
+   * e.g. `fileStorage()` from `@mafzaldev/signal/node`.
    */
   storage?: FlagStorage;
   /** Reconnect if nothing, not even a heartbeat, arrives for this long. Default 60s. */

@@ -1,4 +1,4 @@
-import type { Flag, Ruleset, StreamEvent } from '@feature-flags/core';
+import type { Flag, Ruleset, StreamEvent } from '@signal/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createClient, type FlagsClient } from './client.js';
 

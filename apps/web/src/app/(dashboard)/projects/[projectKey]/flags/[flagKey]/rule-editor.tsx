@@ -1,6 +1,6 @@
 'use client';
 
-import type { AttributeClause, AttributeOperator, Rule, Variation } from '@feature-flags/core';
+import type { AttributeClause, AttributeOperator, Rule, Variation } from '@signal/core';
 import { useState } from 'react';
 import { Button, Input, Select } from '@/components/ui';
 import { OPERATOR_LABELS, parseClauseValues } from '@/lib/targeting';

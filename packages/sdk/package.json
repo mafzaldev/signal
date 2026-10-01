@@ -1,7 +1,7 @@
 {
-  "name": "@feature-flags/sdk",
+  "name": "@mafzaldev/signal",
   "version": "0.0.0",
-  "description": "TypeScript SDK for reading feature flags with live updates and local caching",
+  "description": "TypeScript SDK for Signal feature flags, with live updates and local caching",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -30,7 +30,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "devDependencies": {
-    "@feature-flags/core": "workspace:*",
+    "@signal/core": "workspace:*",
     "tsup": "^8.5.1"
   }
 }

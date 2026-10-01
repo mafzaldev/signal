@@ -6,7 +6,7 @@ import {
   createProjectSchema,
   type UpdateProjectInput,
   updateProjectSchema,
-} from '@feature-flags/core/schemas';
+} from '@signal/core/schemas';
 import { MemberHasPermission, RequireActiveOrg } from '@thallesp/nestjs-better-auth';
 import { type Actor, CurrentActor } from '../common/actor.decorator.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';

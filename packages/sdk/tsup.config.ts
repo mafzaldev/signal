@@ -8,5 +8,5 @@ export default defineConfig({
   clean: true,
   sourcemap: true,
   // core is internal, so it is bundled into the published SDK
-  noExternal: ['@feature-flags/core'],
+  noExternal: ['@signal/core'],
 });

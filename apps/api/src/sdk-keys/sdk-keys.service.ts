@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type { CreateSdkKeyInput } from '@feature-flags/core/schemas';
+import type { CreateSdkKeyInput } from '@signal/core/schemas';
 import { and, asc, eq } from 'drizzle-orm';
 import { AuditService } from '../audit/audit.service.js';
 import type { Actor } from '../common/actor.decorator.js';

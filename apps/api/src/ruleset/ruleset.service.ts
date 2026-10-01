@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import type { Flag, Ruleset, StreamEvent } from '@feature-flags/core';
+import type { Flag, Ruleset, StreamEvent } from '@signal/core';
 import { and, eq } from 'drizzle-orm';
 import { Redis } from 'ioredis';
 import { createHash } from 'node:crypto';

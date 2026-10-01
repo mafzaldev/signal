@@ -1,6 +1,6 @@
 'use client';
 
-import type { Target, Variation } from '@feature-flags/core';
+import type { Target, Variation } from '@signal/core';
 import { useState } from 'react';
 import { Field, Textarea } from '@/components/ui';
 import { parseKeyList, variationLabel } from '@/lib/targeting';

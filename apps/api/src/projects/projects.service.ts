@@ -3,7 +3,7 @@ import type {
   CreateEnvironmentInput,
   CreateProjectInput,
   UpdateProjectInput,
-} from '@feature-flags/core/schemas';
+} from '@signal/core/schemas';
 import { and, asc, eq } from 'drizzle-orm';
 import { AuditService } from '../audit/audit.service.js';
 import type { Actor } from '../common/actor.decorator.js';

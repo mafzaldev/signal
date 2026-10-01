@@ -8,4 +8,4 @@ export {
   type EvaluationDetail,
 } from './client.js';
 export type { FlagStorage } from './storage.js';
-export type { Context, FlagValue, JsonValue } from '@feature-flags/core';
+export type { Context, FlagValue, JsonValue } from '@signal/core';

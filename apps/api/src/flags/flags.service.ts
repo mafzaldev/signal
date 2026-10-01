@@ -11,7 +11,7 @@ import {
   type UpdateFlagInput,
   variationRefsAreValid,
   variationsMatchKind,
-} from '@feature-flags/core/schemas';
+} from '@signal/core/schemas';
 import { and, asc, eq, sql } from 'drizzle-orm';
 import { AuditService } from '../audit/audit.service.js';
 import type { Actor } from '../common/actor.decorator.js';

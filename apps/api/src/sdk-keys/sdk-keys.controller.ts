@@ -8,7 +8,7 @@ import {
   ParseUUIDPipe,
   Post,
 } from '@nestjs/common';
-import { type CreateSdkKeyInput, createSdkKeySchema } from '@feature-flags/core/schemas';
+import { type CreateSdkKeyInput, createSdkKeySchema } from '@signal/core/schemas';
 import { MemberHasPermission, RequireActiveOrg } from '@thallesp/nestjs-better-auth';
 import { type Actor, CurrentActor } from '../common/actor.decorator.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';

@@ -1,6 +1,6 @@
 'use client';
 
-import { evaluate, type Context, type Flag } from '@feature-flags/core';
+import { evaluate, type Context, type Flag } from '@signal/core';
 import { useState } from 'react';
 import { Field, Textarea } from '@/components/ui';
 import { variationLabel } from '@/lib/targeting';

@@ -1,16 +1,18 @@
+name: signal
+
 services:
   postgres:
     image: postgres:17-alpine
     environment:
-      POSTGRES_USER: flags
-      POSTGRES_PASSWORD: flags
-      POSTGRES_DB: flags
+      POSTGRES_USER: signal
+      POSTGRES_PASSWORD: signal
+      POSTGRES_DB: signal
     ports:
       - '5433:5432'
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U flags']
+      test: ['CMD-SHELL', 'pg_isready -U signal']
       interval: 5s
       timeout: 3s
       retries: 10

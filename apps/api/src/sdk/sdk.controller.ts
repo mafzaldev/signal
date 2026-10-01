@@ -1,5 +1,5 @@
 import { Controller, Get, Headers, MessageEvent, Res, Sse, UseGuards } from '@nestjs/common';
-import type { StreamEvent } from '@feature-flags/core';
+import type { StreamEvent } from '@signal/core';
 import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 import type { Response } from 'express';
 import { interval, Observable } from 'rxjs';

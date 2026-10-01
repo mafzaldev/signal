@@ -1,5 +1,5 @@
 {
-  "name": "@feature-flags/core",
+  "name": "@signal/core",
   "version": "0.0.0",
   "private": true,
   "description": "Flag evaluation engine and shared types",

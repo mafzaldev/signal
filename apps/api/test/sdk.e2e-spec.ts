@@ -1,5 +1,5 @@
 import { INestApplication } from '@nestjs/common';
-import { createClient, type FlagsClient } from '@feature-flags/sdk';
+import { createClient, type FlagsClient } from '@mafzaldev/signal';
 import request from 'supertest';
 import { App } from 'supertest/types.js';
 import { addMember, createApp, signUpWithOrganization } from './helpers.js';

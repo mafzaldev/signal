@@ -1,7 +1,7 @@
 'use client';
 
-import type { Flag, Rule } from '@feature-flags/core';
-import { updateFlagConfigSchema } from '@feature-flags/core/schemas';
+import type { Flag, Rule } from '@signal/core';
+import { updateFlagConfigSchema } from '@signal/core/schemas';
 import { useState, useTransition } from 'react';
 import { Button, Card, ErrorMessage, Switch } from '@/components/ui';
 import type { FlagConfig, FlagDetail } from '@/lib/types';

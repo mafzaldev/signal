@@ -1,7 +1,7 @@
 'use server';
 
-import type { Variation } from '@feature-flags/core';
-import type { FlagKind, UpdateFlagConfigInput } from '@feature-flags/core/schemas';
+import type { Variation } from '@signal/core';
+import type { FlagKind, UpdateFlagConfigInput } from '@signal/core/schemas';
 import { refresh } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { type ActionResult, api, ApiError, toActionResult } from '@/lib/api';

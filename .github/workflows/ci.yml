@@ -12,13 +12,13 @@ jobs:
       postgres:
         image: postgres:17-alpine
         env:
-          POSTGRES_USER: flags
-          POSTGRES_PASSWORD: flags
-          POSTGRES_DB: flags
+          POSTGRES_USER: signal
+          POSTGRES_PASSWORD: signal
+          POSTGRES_DB: signal
         ports:
           - 5433:5432
         options: >-
-          --health-cmd "pg_isready -U flags"
+          --health-cmd "pg_isready -U signal"
           --health-interval 5s
           --health-timeout 3s
           --health-retries 10
@@ -43,5 +43,5 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
-      - run: pnpm --filter @feature-flags/api test:e2e
+      - run: pnpm --filter @signal/api test:e2e
       - run: pnpm build

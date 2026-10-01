@@ -1,4 +1,4 @@
-import type { Ruleset } from '@feature-flags/core';
+import type { Ruleset } from '@signal/core';
 
 /**
  * Where the SDK keeps its last known flags so it can start without the API.

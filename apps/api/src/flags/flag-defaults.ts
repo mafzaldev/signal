@@ -1,5 +1,5 @@
-import type { Variation } from '@feature-flags/core';
-import type { FlagKind } from '@feature-flags/core/schemas';
+import type { Variation } from '@signal/core';
+import type { FlagKind } from '@signal/core/schemas';
 
 export const BOOLEAN_VARIATIONS: Variation[] = [{ value: true }, { value: false }];
 

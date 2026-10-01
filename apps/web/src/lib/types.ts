@@ -1,5 +1,5 @@
-import type { Rule, Serve, Target, Variation } from '@feature-flags/core';
-import type { FlagKind } from '@feature-flags/core/schemas';
+import type { Rule, Serve, Target, Variation } from '@signal/core';
+import type { FlagKind } from '@signal/core/schemas';
 
 export interface SessionData {
   user: { id: string; name: string; email: string };

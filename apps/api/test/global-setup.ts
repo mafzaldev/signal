@@ -5,7 +5,7 @@ import { Client } from 'pg';
 /** Recreates the test database from scratch and applies migrations. */
 export default async function setup() {
   const url = new URL(
-    process.env.TEST_DATABASE_URL ?? 'postgres://flags:flags@localhost:5433/flags_test',
+    process.env.TEST_DATABASE_URL ?? 'postgres://signal:signal@localhost:5433/signal_test',
   );
   const name = url.pathname.slice(1);
 

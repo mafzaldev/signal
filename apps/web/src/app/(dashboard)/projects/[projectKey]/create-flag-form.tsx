@@ -1,6 +1,6 @@
 'use client';
 
-import type { FlagKind } from '@feature-flags/core/schemas';
+import type { FlagKind } from '@signal/core/schemas';
 import { useActionState, useState } from 'react';
 import { Button, ErrorMessage, Field, Input, Select, Textarea } from '@/components/ui';
 import { toKey } from '@/lib/keys';

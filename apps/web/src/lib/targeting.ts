@@ -4,8 +4,8 @@ import {
   type AttributeValue,
   type Serve,
   type Variation,
-} from '@feature-flags/core';
-import type { FlagKind } from '@feature-flags/core/schemas';
+} from '@signal/core';
+import type { FlagKind } from '@signal/core/schemas';
 
 const PERCENT_SCALE = BUCKET_SCALE / 100;
 

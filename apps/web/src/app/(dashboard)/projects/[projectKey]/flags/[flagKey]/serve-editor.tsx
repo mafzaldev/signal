@@ -1,6 +1,6 @@
 'use client';
 
-import { BUCKET_SCALE, type Serve, type Variation } from '@feature-flags/core';
+import { BUCKET_SCALE, type Serve, type Variation } from '@signal/core';
 import { Input, Select } from '@/components/ui';
 import { percentToWeight, variationLabel, weightToPercent } from '@/lib/targeting';
 
