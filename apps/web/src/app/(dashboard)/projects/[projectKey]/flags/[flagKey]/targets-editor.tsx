@@ -2,8 +2,9 @@
 
 import type { Target, Variation } from '@signal/core';
 import { useState } from 'react';
-import { Field, Textarea } from '@/components/ui';
+import { cx, Textarea } from '@/components/ui';
 import { parseKeyList, variationLabel } from '@/lib/targeting';
+import { variationColor } from './serve-editor';
 
 /** One list of context keys per variation. */
 export function TargetsEditor({
@@ -35,16 +36,31 @@ export function TargetsEditor({
   }
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {variations.map((_, index) => (
-        <Field
-          key={index}
-          label={`Serve ${variationLabel(variations, index)} to`}
-          hint="Context keys, one per line"
-        >
-          <Textarea rows={3} value={texts[index]} onChange={(e) => update(index, e.target.value)} />
-        </Field>
-      ))}
+    <div className="grid gap-4 sm:grid-cols-2">
+      {variations.map((_, index) => {
+        const count = parseKeyList(texts[index] ?? '').length;
+        return (
+          <label key={index} className="flex flex-col gap-1.5">
+            <span className="flex items-center gap-2 text-[13px]">
+              <span className={cx('size-2 rounded-full', variationColor(index))} />
+              Serve{' '}
+              <code className="font-mono font-semibold">
+                {variationLabel(variations, index)}
+              </code>{' '}
+              to
+              <span className="ml-auto text-xs text-faint">
+                {count} {count === 1 ? 'key' : 'keys'}
+              </span>
+            </span>
+            <Textarea
+              rows={3}
+              placeholder="user-123, one per line or comma-separated"
+              value={texts[index]}
+              onChange={(e) => update(index, e.target.value)}
+            />
+          </label>
+        );
+      })}
     </div>
   );
 }
