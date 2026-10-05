@@ -2,13 +2,19 @@
 
 import type { Variation } from '@signal/core';
 import type { FlagKind, UpdateFlagConfigInput } from '@signal/core/schemas';
-import { refresh } from 'next/cache';
+import { refresh, revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { type ActionResult, api, ApiError, toActionResult } from '@/lib/api';
 import { parseVariations } from '@/lib/targeting';
 
 const json = (body: unknown) => JSON.stringify(body);
 const text = (form: FormData, name: string) => String(form.get(name) ?? '').trim();
+
+/** Redirects after a change the sidebar or lists show; a plain redirect keeps them stale. */
+function redirectFresh(path: string): never {
+  revalidatePath('/', 'layout');
+  redirect(path);
+}
 
 /** Boolean flags always use `[true, false]`, so only other kinds send variations. */
 function formVariations(
@@ -25,7 +31,7 @@ export async function createProject(_: ActionResult, form: FormData): Promise<Ac
     api('/projects', { method: 'POST', body: json({ key, name: text(form, 'name') }) }),
   );
   if (result?.error) return result;
-  redirect(`/projects/${key}`);
+  redirectFresh(`/projects/${key}`);
 }
 
 export async function renameProject(
@@ -42,7 +48,7 @@ export async function renameProject(
 
 export async function deleteProject(projectKey: string) {
   await api(`/projects/${projectKey}`, { method: 'DELETE' });
-  redirect('/projects');
+  redirectFresh('/projects');
 }
 
 export async function createEnvironment(
@@ -87,7 +93,7 @@ export async function createFlag(
     }),
   );
   if (result?.error) return result;
-  redirect(`/projects/${projectKey}/flags/${key}`);
+  redirectFresh(`/projects/${projectKey}/flags/${key}`);
 }
 
 export async function updateFlag(
@@ -111,7 +117,7 @@ export async function updateFlag(
 
 export async function deleteFlag(projectKey: string, flagKey: string) {
   await api(`/projects/${projectKey}/flags/${flagKey}`, { method: 'DELETE' });
-  redirect(`/projects/${projectKey}`);
+  redirectFresh(`/projects/${projectKey}`);
 }
 
 export async function updateFlagConfig(
