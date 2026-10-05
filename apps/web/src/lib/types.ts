@@ -35,10 +35,11 @@ export interface FlagSummary {
   description: string;
   kind: FlagKind;
   variations: Variation[];
-  environments: { environmentKey: string; enabled: boolean; version: number }[];
+  environments: FlagConfigSummary[];
 }
 
-export interface FlagConfig {
+/** A flag's targeting in one environment, as returned by the flag list. */
+export interface FlagConfigSummary {
   environmentKey: string;
   enabled: boolean;
   offVariation: number;
@@ -46,6 +47,9 @@ export interface FlagConfig {
   rules: Rule[];
   fallthrough: Serve;
   version: number;
+}
+
+export interface FlagConfig extends FlagConfigSummary {
   updatedAt: string;
 }
 
@@ -72,10 +76,29 @@ export interface AuditPage {
   nextCursor: string | null;
 }
 
+export type Role = 'owner' | 'admin' | 'member' | 'viewer';
+
 export interface Member {
   id: string;
-  role: string;
+  role: Role;
+  createdAt: string;
   user: { id: string; name: string; email: string };
+}
+
+export interface Invitation {
+  id: string;
+  email: string;
+  role: Role;
+  status: 'pending' | 'accepted' | 'rejected' | 'canceled';
+  expiresAt: string;
+  createdAt: string;
+  inviterId: string;
+}
+
+/** An invitation as its recipient sees it, with the organization's name. */
+export interface InvitationDetail extends Invitation {
+  organizationName: string;
+  inviterEmail: string;
 }
 
 export interface SdkKey {

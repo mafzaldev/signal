@@ -4,6 +4,8 @@ const apiUrl = process.env.API_URL ?? 'http://localhost:4000';
 
 const nextConfig: NextConfig = {
   agentRules: false,
+  // The route indicator covers page content; build and runtime errors still show.
+  devIndicators: false,
   turbopack: {
     rules: {
       '*.css': {

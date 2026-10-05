@@ -1,1 +1,54 @@
 @import 'tailwindcss';
+
+@theme inline {
+  --font-sans: var(--font-plex-sans);
+  --font-mono: var(--font-plex-mono);
+}
+
+/*
+ * Dark palette. `paper` is the page, `surface` raised panels and fields, `ink` the
+ * foreground (and the fill of primary buttons), and `signal` the one colour for live states.
+ */
+@theme {
+  --color-paper: #0f0f0e;
+  --color-surface: #181817;
+  --color-ink: #ededea;
+  --color-ink-2: #c2c2bc;
+  --color-muted: #8d8d86;
+  --color-faint: #5f5f59;
+  --color-rule: #2a2a28;
+  --color-rule-strong: #3e3e3a;
+  --color-wash: #232321;
+  --color-signal: #ff5a14;
+  --color-signal-ink: #ff8a50;
+  --color-signal-wash: #2c1a10;
+  --color-danger: #e5483a;
+  --color-danger-wash: #2c1513;
+}
+
+/* Native controls (selects, scrollbars, date pickers) follow the dark theme too. */
+:root {
+  color-scheme: dark;
+}
+
+/* Tailwind v4 gives buttons the default cursor; anything clickable gets the pointer. */
+@layer base {
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  summary,
+  select:not(:disabled),
+  input[type='range']:not(:disabled),
+  input[type='checkbox']:not(:disabled),
+  input[type='radio']:not(:disabled) {
+    cursor: pointer;
+  }
+
+  :disabled {
+    cursor: not-allowed;
+  }
+}
+
+/* Native dialogs: no lift or blur, just appear over a flat wash. */
+dialog::backdrop {
+  background: rgb(0 0 0 / 0.6);
+}

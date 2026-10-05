@@ -2,7 +2,9 @@ import {
   BUCKET_SCALE,
   type AttributeOperator,
   type AttributeValue,
+  type Rule,
   type Serve,
+  type Target,
   type Variation,
 } from '@signal/core';
 import type { FlagKind } from '@signal/core/schemas';
@@ -67,6 +69,28 @@ export function describeServe(serve: Serve, variations: Variation[]): string {
     .join(', ');
 }
 
+/** One line on what a flag does in an environment, e.g. "2 rules, then 20% true, 80% false". */
+export function summarizeConfig(
+  config: {
+    enabled: boolean;
+    offVariation: number;
+    targets: Target[];
+    rules: Rule[];
+    fallthrough: Serve;
+  },
+  variations: Variation[],
+): string {
+  if (!config.enabled) return `Serving ${variationLabel(variations, config.offVariation)}`;
+  const parts: string[] = [];
+  const targeted = config.targets.reduce((sum, t) => sum + t.values.length, 0);
+  if (targeted > 0) parts.push(`${targeted} targeted`);
+  if (config.rules.length > 0) {
+    parts.push(`${config.rules.length} ${config.rules.length === 1 ? 'rule' : 'rules'}`);
+  }
+  const fallthrough = describeServe(config.fallthrough, variations);
+  return parts.length > 0 ? `${parts.join(', ')}, then ${fallthrough}` : `Serving ${fallthrough}`;
+}
+
 /** One variation per line. JSON flags take one JSON value per line. */
 export function parseVariations(
   kind: FlagKind,
@@ -109,7 +133,15 @@ export function changedFields(before: unknown, after: unknown): string[] {
     v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
   const b = asRecord(before);
   const a = asRecord(after);
-  const ignored = new Set(['updatedAt', 'createdAt', 'version']);
+  const ignored = new Set([
+    'updatedAt',
+    'createdAt',
+    'version',
+    'flagId',
+    'environmentId',
+    'flagKey',
+    'environmentKey',
+  ]);
   return [...new Set([...Object.keys(b), ...Object.keys(a)])].filter(
     (key) => !ignored.has(key) && JSON.stringify(b[key]) !== JSON.stringify(a[key]),
   );
