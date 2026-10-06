@@ -1,27 +1,66 @@
 'use client';
 
-import { useActionState, useTransition } from 'react';
+import { useActionState, useState, useTransition } from 'react';
+import { toast } from 'sonner';
+import { CopyButton } from '@/components/copy-button';
+import { useConfirm } from '@/components/dialog';
+import { Sheet, SheetActions } from '@/components/sheet';
+import { EnvironmentDot } from '@/components/environment';
+import { KeyIcon, PlusIcon } from '@/components/icons';
 import { Badge, Button, ErrorMessage, Field, Input } from '@/components/ui';
 import type { Environment, SdkKey } from '@/lib/types';
 import { createSdkKey, revokeSdkKey } from '../../actions';
 
-function NewKeyNotice({ sdkKey }: { sdkKey: string }) {
-  return (
-    <div className="space-y-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm">
-      <p className="font-medium">Copy this key now. It won&apos;t be shown again.</p>
-      <div className="flex gap-2">
-        <code className="flex-1 overflow-x-auto rounded bg-white px-2 py-1.5 font-mono text-xs">
-          {sdkKey}
-        </code>
-        <Button variant="secondary" onClick={() => navigator.clipboard.writeText(sdkKey)}>
-          Copy
-        </Button>
+function CreateKeyForm({
+  projectKey,
+  environment,
+  onDone,
+}: {
+  projectKey: string;
+  environment: Environment;
+  onDone: () => void;
+}) {
+  const [state, action, pending] = useActionState(
+    createSdkKey.bind(null, projectKey, environment.key),
+    undefined,
+  );
+
+  if (state?.key) {
+    return (
+      <div className="flex flex-1 flex-col gap-4">
+        <div className="rounded-md bg-signal-wash px-3 py-2 text-[13px] text-ink">
+          Copy this key now. For security, it won’t be shown again.
+        </div>
+        <div className="flex items-center gap-2 rounded-md bg-ink py-2 pr-2 pl-3 text-paper">
+          <code className="min-w-0 flex-1 font-mono text-xs break-all">{state.key}</code>
+          <CopyButton value={state.key} label="Copy SDK key" />
+        </div>
+        <SheetActions>
+          <Button onClick={onDone}>Done</Button>
+        </SheetActions>
       </div>
-    </div>
+    );
+  }
+
+  return (
+    <form action={action} className="flex flex-1 flex-col gap-4">
+      <Field label="Name" hint="Where the key is used, so you know what breaks if you revoke it.">
+        <Input name="name" placeholder="e.g. Checkout service" required autoFocus />
+      </Field>
+      <ErrorMessage>{state?.error}</ErrorMessage>
+      <SheetActions>
+        <Button variant="secondary" onClick={onDone}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={pending}>
+          {pending ? 'Creating…' : 'Create key'}
+        </Button>
+      </SheetActions>
+    </form>
   );
 }
 
-export function EnvironmentSdkKeys({
+function EnvironmentKeys({
   projectKey,
   environment,
   keys,
@@ -30,35 +69,52 @@ export function EnvironmentSdkKeys({
   environment: Environment;
   keys: SdkKey[];
 }) {
-  const [state, action, creating] = useActionState(
-    createSdkKey.bind(null, projectKey, environment.key),
-    undefined,
-  );
-  const [revoking, startRevoking] = useTransition();
+  const [creating, setCreating] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const confirm = useConfirm();
 
   return (
-    <div className="space-y-3">
-      <h3 className="text-sm font-medium">{environment.name}</h3>
+    <div>
+      <div className="flex items-center justify-between gap-3 border-b border-rule-strong pb-2">
+        <span className="text-xs font-medium flex items-center gap-2">
+          <EnvironmentDot environmentKey={environment.key} />
+          {environment.name}
+        </span>
+        <Button size="sm" variant="secondary" onClick={() => setCreating(true)}>
+          <PlusIcon className="size-3.5" />
+          New key
+        </Button>
+      </div>
       {keys.length > 0 ? (
-        <ul className="divide-y divide-zinc-100 rounded-md border border-zinc-200">
+        <ul>
           {keys.map((key) => (
-            <li key={key.id} className="flex items-center gap-3 px-3 py-2 text-sm">
+            <li
+              key={key.id}
+              className="flex flex-wrap items-center gap-3 border-b border-rule py-2.5"
+            >
+              <KeyIcon className="size-4 text-muted" />
               <span className="font-medium">{key.name}</span>
-              <code className="font-mono text-xs text-zinc-500">{key.keyPrefix}…</code>
+              <code className="font-mono text-xs text-muted">{key.keyPrefix}…</code>
               <Badge>{key.kind}</Badge>
-              <span className="ml-auto text-xs text-zinc-500">
-                {new Date(key.createdAt).toLocaleDateString()}
+              <span className="ml-auto text-xs text-muted">
+                Created {new Date(key.createdAt).toLocaleDateString()}
               </span>
               <Button
+                size="sm"
                 variant="ghost"
-                disabled={revoking}
-                onClick={() => {
-                  if (
-                    !window.confirm(`Revoke "${key.name}"? Apps using it stop receiving flags.`)
-                  ) {
-                    return;
-                  }
-                  startRevoking(() => revokeSdkKey(projectKey, environment.key, key.id));
+                disabled={pending}
+                onClick={async () => {
+                  const ok = await confirm({
+                    title: `Revoke “${key.name}”?`,
+                    description: `Apps using this key are disconnected immediately and stop receiving flag updates for ${environment.name}.`,
+                    confirmLabel: 'Revoke key',
+                    tone: 'danger',
+                  });
+                  if (!ok) return;
+                  startTransition(async () => {
+                    await revokeSdkKey(projectKey, environment.key, key.id);
+                    toast.success(`Revoked “${key.name}”`);
+                  });
                 }}
               >
                 Revoke
@@ -67,20 +123,38 @@ export function EnvironmentSdkKeys({
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-zinc-500">No keys.</p>
+        <p className="px-4 py-3 text-[13px] text-muted">No keys yet.</p>
       )}
-      {state?.key && <NewKeyNotice sdkKey={state.key} />}
-      <form action={action} className="flex items-end gap-3">
-        <div className="w-60">
-          <Field label="Key name">
-            <Input name="name" placeholder="e.g. Checkout service" required />
-          </Field>
-        </div>
-        <Button type="submit" variant="secondary" disabled={creating}>
-          Create key
-        </Button>
-        <ErrorMessage>{state?.error}</ErrorMessage>
-      </form>
+      <Sheet
+        open={creating}
+        onClose={() => setCreating(false)}
+        title={`New SDK key for ${environment.name}`}
+        description="Server-side apps use it to read this environment’s flags."
+      >
+        <CreateKeyForm
+          projectKey={projectKey}
+          environment={environment}
+          onDone={() => setCreating(false)}
+        />
+      </Sheet>
+    </div>
+  );
+}
+
+export function SdkKeys({
+  projectKey,
+  environments,
+  keys,
+}: {
+  projectKey: string;
+  environments: Environment[];
+  keys: SdkKey[][];
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      {environments.map((env, i) => (
+        <EnvironmentKeys key={env.id} projectKey={projectKey} environment={env} keys={keys[i]!} />
+      ))}
     </div>
   );
 }
