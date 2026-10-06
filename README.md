@@ -1,11 +1,13 @@
-# Feature Flags
+<img src="docs/assets/logo.svg" alt="" width="56" height="56">
 
-A self-hosted feature flag service. Teams create projects and flags in a dashboard, roll them out to specific users or a percentage of traffic, and apps read them through a TypeScript SDK that updates live and keeps working when the service is down.
+# Signal
+
+Signal is a self-hosted feature flag service. Teams create projects and flags in a dashboard, roll them out to specific users or a percentage of traffic, and apps read them through a TypeScript SDK that updates live and keeps working when the service is down.
 
 - **Targeting**: turn flags on per environment, target individual users, write rules on user attributes ("country is PK and plan is not free"), and roll out by percentage with sticky, deterministic bucketing.
 - **Live updates**: a change in the dashboard reaches running apps in under a second over Server-Sent Events, across any number of API instances.
 - **Resilient SDK**: flags are evaluated in-process with no network call per check. If the API goes down, apps keep the flags they have and can even start from a disk cache.
-- **Teams**: organizations with owner, admin, member and viewer roles; every change is recorded in an audit log with before and after snapshots.
+- **Teams**: organizations with owner, admin, member and viewer roles, joined through invitation links; every flag, project and key change is recorded in an audit log with before and after snapshots.
 - **Typed end to end**: one evaluation engine and one set of Zod schemas shared by the API, the dashboard and the SDK.
 
 ## How it works
@@ -33,7 +35,7 @@ pnpm db:up      # Postgres on localhost:5433, Redis on localhost:6379
 Create `apps/api/.env`:
 
 ```sh
-DATABASE_URL=postgres://flags:flags@localhost:5433/flags
+DATABASE_URL=postgres://signal:signal@localhost:5433/signal
 REDIS_URL=redis://localhost:6379
 BETTER_AUTH_SECRET=   # at least 32 random characters, e.g. `openssl rand -base64 32`
 BETTER_AUTH_URL=http://localhost:4000
@@ -43,7 +45,7 @@ TRUSTED_ORIGINS=http://localhost:3000
 Apply migrations and start everything:
 
 ```sh
-pnpm --filter @feature-flags/api db:migrate
+pnpm --filter @signal/api db:migrate
 pnpm dev
 ```
 
@@ -52,15 +54,15 @@ Then:
 1. Open http://localhost:3000, create an account and an organization.
 2. Create a project, then a flag called `new-checkout`.
 3. In the project's settings, create an SDK key for `production`.
-4. Run the demo: `FLAGS_SDK_KEY=<key> pnpm --filter @feature-flags/demo start`
+4. Run the demo: `FLAGS_SDK_KEY=<key> pnpm --filter @signal/demo start`
 5. Toggle `new-checkout` in production. The demo prints the new values within a second.
 6. Stop the API and start the demo again: it still prints the last values, from its cache.
 
 ## Using the SDK
 
 ```ts
-import { createClient } from '@feature-flags/sdk';
-import { fileStorage } from '@feature-flags/sdk/node';
+import { createClient } from '@mafzaldev/signal';
+import { fileStorage } from '@mafzaldev/signal/node';
 
 const flags = createClient({
   sdkKey: process.env.FLAGS_SDK_KEY!,
@@ -101,19 +103,19 @@ docs/           Documentation
 
 ## Scripts
 
-| Command                                     | Does                                      |
-| ------------------------------------------- | ----------------------------------------- |
-| `pnpm dev`                                  | Runs everything in watch mode             |
-| `pnpm build`                                | Builds everything                         |
-| `pnpm lint`                                 | ESLint                                    |
-| `pnpm typecheck`                            | TypeScript                                |
-| `pnpm test`                                 | Unit tests                                |
-| `pnpm --filter @feature-flags/api test:e2e` | API end-to-end tests (needs `pnpm db:up`) |
-| `pnpm format`                               | Prettier                                  |
-| `pnpm db:down`                              | Stops Postgres and Redis                  |
+| Command                              | Does                                      |
+| ------------------------------------ | ----------------------------------------- |
+| `pnpm dev`                           | Runs everything in watch mode             |
+| `pnpm build`                         | Builds everything                         |
+| `pnpm lint`                          | ESLint                                    |
+| `pnpm typecheck`                     | TypeScript                                |
+| `pnpm test`                          | Unit tests                                |
+| `pnpm --filter @signal/api test:e2e` | API end-to-end tests (needs `pnpm db:up`) |
+| `pnpm format`                        | Prettier                                  |
+| `pnpm db:down`                       | Stops Postgres and Redis                  |
 
 If `pnpm dev` fails with a file watcher error, see [Troubleshooting](docs/development.md#troubleshooting).
 
 ## Status
 
-Done: the evaluation engine, the API with authentication, roles and the audit log, the dashboard, SDK keys, live updates, and the SDK's offline cache and fallbacks. Next: publishing the SDK to npm, segments and browser support, then deployment and load testing. A/B testing with AI-written result summaries comes after that. See [PLAN.md](PLAN.md).
+Done: the evaluation engine, the API with authentication, roles and the audit log, the dashboard (including members and invitations), SDK keys, live updates, and the SDK's offline cache and fallbacks. Next: publishing the SDK to npm, segments and browser support, then deployment and load testing. A/B testing with AI-written result summaries comes after that. See [PLAN.md](PLAN.md).
