@@ -24,13 +24,20 @@ export function CreateOrganizationForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <Field label="Organization name">
-        <Input value={name} onChange={(e) => setName(e.target.value)} required maxLength={100} />
+        <Input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="e.g. Acme"
+          required
+          maxLength={100}
+          autoFocus
+        />
       </Field>
       <ErrorMessage>{error}</ErrorMessage>
-      <Button type="submit" disabled={pending || !toKey(name)}>
-        Create organization
+      <Button type="submit" disabled={pending || !toKey(name)} className="w-full">
+        {pending ? 'Creating…' : 'Create organization'}
       </Button>
     </form>
   );
