@@ -12,13 +12,17 @@ Signal is a self-hosted feature flag service. Teams create projects and flags in
 
 ## How it works
 
-```mermaid
-flowchart LR
-  dash["Dashboard<br/>Next.js"] -- "manage flags" --> api["API<br/>NestJS"]
-  api -- "change + audit row" --> pg[("Postgres")]
-  api -- "publish change" --> redis[("Redis")]
-  redis -- "to every API instance" --> api
-  api -- "SSE stream" --> sdk["Your app<br/>+ SDK"]
+```text
+┌───────────┐  manage flags  ┌──────────┐  change + audit row  ┌──────────┐
+│ Dashboard │ ─────────────▶ │   API    │ ───────────────────▶ │ Postgres │
+│  Next.js  │                │  NestJS  │                      └──────────┘
+└───────────┘                └──────────┘
+                              │   ▲    │      SSE stream       ┌────────────────┐
+               publish change │   │    └─────────────────────▶ │ Your app + SDK │
+                              ▼   │ to every API instance      └────────────────┘
+                             ┌──────────┐
+                             │  Redis   │
+                             └──────────┘
 ```
 
 The dashboard calls the API, which saves each change together with its audit entry, then publishes it through Redis. Every API instance forwards it to the SDKs connected to it, and each SDK evaluates flags locally from the rules it holds. [docs/architecture.md](docs/architecture.md) has the full picture.
