@@ -12,3 +12,4 @@ coverage/
 *.log
 next-env.d.ts
 .flags-cache*.json
+.signal-demo.json

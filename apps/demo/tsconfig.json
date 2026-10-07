@@ -4,6 +4,8 @@
     "noEmit": true,
     // Node runs this file directly by stripping types, so only erasable syntax is allowed.
     "erasableSyntaxOnly": true,
+    // Imports name the .ts files Node actually loads.
+    "allowImportingTsExtensions": true,
     "types": ["node"]
   },
   "include": ["src"]

@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Demo Shop · Signal</title>
+    <style>
+      :root {
+        --bg: #f6f5f1;
+        --surface: #ffffff;
+        --ink: #1c1b18;
+        --muted: #6f6c64;
+        --rule: #e3e1da;
+        --tag: #efeee8;
+        --signal: #ff5a14;
+        --accent: #2563eb;
+        color-scheme: light;
+      }
+      body.dark {
+        --bg: #111110;
+        --surface: #1b1b19;
+        --ink: #eceae4;
+        --muted: #9a978f;
+        --rule: #2d2c29;
+        --tag: #262522;
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font:
+          15px/1.5 ui-sans-serif,
+          system-ui,
+          sans-serif;
+        transition:
+          background 0.3s,
+          color 0.3s;
+      }
+      code,
+      .mono {
+        font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+        font-size: 12px;
+      }
+      header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 16px;
+        padding: 14px 24px;
+        border-bottom: 1px solid var(--rule);
+        background: var(--surface);
+      }
+      .brand {
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        font-size: 18px;
+      }
+      .shoppers {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-left: auto;
+      }
+      .shoppers button {
+        border: 1px solid var(--rule);
+        background: transparent;
+        color: var(--ink);
+        border-radius: 999px;
+        padding: 5px 12px;
+        font: inherit;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .shoppers button[aria-pressed='true'] {
+        background: var(--ink);
+        color: var(--bg);
+        border-color: var(--ink);
+      }
+      .shoppers button small {
+        opacity: 0.6;
+        margin-left: 4px;
+      }
+      .live {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .live i {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--muted);
+      }
+      .live.on i {
+        background: #22c55e;
+      }
+      .banner {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 10px 24px;
+        background: var(--signal);
+        color: #fff;
+        font-weight: 600;
+      }
+      .banner .tag {
+        background: rgb(255 255 255 / 0.2);
+        color: #fff;
+      }
+      main {
+        display: grid;
+        gap: 24px;
+        grid-template-columns: minmax(0, 1fr) 340px;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+      @media (max-width: 900px) {
+        main {
+          grid-template-columns: 1fr;
+        }
+      }
+      h2 {
+        margin: 0;
+        font-size: 15px;
+      }
+      .section-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+      .section-head p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .tag {
+        display: inline-block;
+        border-radius: 4px;
+        padding: 1px 6px;
+        background: var(--tag);
+        color: var(--muted);
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 11px;
+        white-space: nowrap;
+      }
+      .products {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      }
+      .product {
+        border: 1px solid var(--rule);
+        border-radius: 10px;
+        background: var(--surface);
+        overflow: hidden;
+      }
+      .product .art {
+        display: grid;
+        place-items: center;
+        aspect-ratio: 4 / 3;
+        font-weight: 700;
+        font-size: 22px;
+        color: rgb(0 0 0 / 0.45);
+      }
+      .product .info {
+        padding: 10px 12px;
+      }
+      .product .name {
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .product .price {
+        color: var(--muted);
+        font-size: 13px;
+      }
+      aside {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+      .card {
+        border: 1px solid var(--rule);
+        border-radius: 12px;
+        background: var(--surface);
+        padding: 18px;
+      }
+      .cart-line {
+        display: flex;
+        justify-content: space-between;
+        font-size: 14px;
+        padding: 4px 0;
+      }
+      .cart-total {
+        border-top: 1px solid var(--rule);
+        margin-top: 8px;
+        padding-top: 10px;
+        font-weight: 700;
+      }
+      .steps {
+        display: flex;
+        gap: 6px;
+        margin: 14px 0 12px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .steps span {
+        flex: 1;
+        border-top: 3px solid var(--rule);
+        padding-top: 6px;
+      }
+      .steps span:first-child {
+        border-color: var(--accent);
+        color: var(--ink);
+      }
+      .checkout {
+        width: 100%;
+        margin-top: 14px;
+        border: 0;
+        border-radius: 10px;
+        padding: 12px;
+        background: var(--accent);
+        color: #fff;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+      .one-click {
+        margin-top: 10px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .flag-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      .flag-table td {
+        border-top: 1px solid var(--rule);
+        padding: 8px 4px;
+        vertical-align: top;
+      }
+      .flag-table td:first-child {
+        width: 45%;
+      }
+      .flag-table .why {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .flag-table tr.flash td {
+        animation: flash 1.6s ease-out;
+      }
+      @keyframes flash {
+        from {
+          background: rgb(255 90 20 / 0.22);
+        }
+      }
+      .meta {
+        margin-top: 12px;
+        font-size: 12px;
+        color: var(--muted);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .meta a {
+        color: var(--signal);
+        font-weight: 600;
+        text-decoration: none;
+      }
+      .context {
+        margin: 0 0 12px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      /* Long values (the context, JSON flags) wrap instead of widening the page. */
+      .context code,
+      .flag-table code {
+        overflow-wrap: anywhere;
+      }
+      aside {
+        min-width: 0;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <span class="brand">Demo Shop</span>
+      <span class="live" id="live"><i></i><span>Connecting…</span></span>
+      <nav class="shoppers" id="shoppers" aria-label="Shop as"></nav>
+    </header>
+    <div id="banner"></div>
+    <main>
+      <section>
+        <div class="section-head">
+          <h2>Products</h2>
+          <p id="product-count"></p>
+          <span class="tag">search-page-size</span>
+        </div>
+        <div class="products" id="products"></div>
+      </section>
+      <aside>
+        <div class="card">
+          <div class="section-head">
+            <h2>Your cart</h2>
+            <span class="tag">new-checkout</span>
+            <span class="tag">button-color</span>
+          </div>
+          <div class="cart-line"><span>Canvas tote</span><span>$24.00</span></div>
+          <div class="cart-line"><span>Field notebook</span><span>$12.00</span></div>
+          <div class="cart-line cart-total"><span>Total</span><span>$36.00</span></div>
+          <div id="checkout"></div>
+        </div>
+        <div class="card">
+          <div class="section-head">
+            <h2>What Signal served</h2>
+          </div>
+          <p class="context" id="context"></p>
+          <table class="flag-table">
+            <tbody id="flags"></tbody>
+          </table>
+          <div class="meta">
+            <span id="source"></span>
+            <a id="dashboard" href="#" target="_blank" rel="noreferrer"
+              >Change these flags in the dashboard →</a
+            >
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <script>
+      const SHOPPERS = __SHOPPERS__;
+      document.getElementById('dashboard').href = '__DASHBOARD_URL__';
+
+      const COLORS = { blue: '#2563eb', green: '#16a34a', orange: '#ea580c' };
+      const PRODUCT_NAMES = [
+        'Canvas tote',
+        'Field notebook',
+        'Wool beanie',
+        'Desk lamp',
+        'Ceramic mug',
+        'Linen shirt',
+        'Trail socks',
+        'Leather wallet',
+        'Water bottle',
+        'Wall clock',
+        'Rain jacket',
+        'Sketch pens',
+        'Travel pillow',
+        'Cotton scarf',
+        'Plant pot',
+        'Phone stand',
+        'Tea tin',
+        'Card holder',
+        'Throw blanket',
+        'Pocket knife',
+        'Desk mat',
+        'Sun hat',
+        'Key ring',
+        'Wooden tray',
+      ];
+      const TINTS = ['#f9d7c4', '#cfe3f7', '#d8ecd2', '#f4e3a8', '#e6d5f3', '#f3cfd8'];
+      const products = PRODUCT_NAMES.map((name, i) => ({
+        name,
+        price: (8 + ((i * 7) % 40)).toFixed(2),
+        tint: TINTS[i % TINTS.length],
+      }));
+
+      let shopper = SHOPPERS[0].key;
+      let previous = {};
+      let updatedAt = 0;
+
+      function renderShoppers() {
+        const nav = document.getElementById('shoppers');
+        const visitor = !SHOPPERS.some((s) => s.key === shopper);
+        nav.innerHTML =
+          SHOPPERS.map(
+            (s) =>
+              `<button aria-pressed="${s.key === shopper}" data-key="${s.key}">${s.name}<small>${s.country} · ${s.plan}</small></button>`,
+          ).join('') +
+          `<button aria-pressed="${visitor}" data-key="visitor">Random visitor${visitor ? `<small>${shopper}</small>` : ''}</button>`;
+        for (const button of nav.querySelectorAll('button')) {
+          button.onclick = () => {
+            shopper =
+              button.dataset.key === 'visitor'
+                ? `visitor-${Math.floor(Math.random() * 9000 + 1000)}`
+                : button.dataset.key;
+            previous = {};
+            refresh();
+          };
+        }
+      }
+
+      const show = (value) => (typeof value === 'string' ? value : JSON.stringify(value));
+
+      function render(state) {
+        const f = state.flags;
+        document.body.classList.toggle('dark', f.darkMode.value === true);
+        document.documentElement.style.setProperty(
+          '--accent',
+          COLORS[f.buttonColor.value] ?? COLORS.blue,
+        );
+
+        const banner = f.promoBanner.value;
+        document.getElementById('banner').innerHTML = banner?.text
+          ? `<div class="banner">${banner.text}<span class="tag">promo-banner</span></div>`
+          : '';
+
+        const size = Number(f.pageSize.value) || 6;
+        document.getElementById('product-count').textContent =
+          `Showing ${Math.min(size, products.length)} of ${products.length}`;
+        document.getElementById('products').innerHTML = products
+          .slice(0, size)
+          .map(
+            (p) =>
+              `<div class="product"><div class="art" style="background:${p.tint}">${p.name
+                .split(' ')
+                .map((w) => w[0])
+                .join(
+                  '',
+                )}</div><div class="info"><div class="name">${p.name}</div><div class="price">$${p.price}</div></div></div>`,
+          )
+          .join('');
+
+        document.getElementById('checkout').innerHTML = f.newCheckout.value
+          ? `<button class="checkout">Pay $36.00 now</button><p class="one-click">One-click checkout with your saved card.</p>`
+          : `<div class="steps"><span>1 · Shipping</span><span>2 · Payment</span><span>3 · Review</span></div><button class="checkout">Continue to shipping</button>`;
+
+        const ctx = state.context;
+        document.getElementById('context').innerHTML = ctx.country
+          ? `Context: <code>${JSON.stringify(ctx)}</code>`
+          : `Context: <code>${JSON.stringify(ctx)}</code> (no country or plan, so only rollouts apply)`;
+
+        document.getElementById('flags').innerHTML = Object.entries(f)
+          .map(([name, flag]) => {
+            const changed =
+              name in previous && JSON.stringify(previous[name]) !== JSON.stringify(flag);
+            return `<tr class="${changed ? 'flash' : ''}"><td><code>${flag.key}</code></td><td><code>${show(flag.value)}</code><span class="why">${flag.explanation}</span></td></tr>`;
+          })
+          .join('');
+        previous = f;
+
+        document.getElementById('source').textContent =
+          state.source === 'server'
+            ? 'Flags from the Signal API, evaluated in this server.'
+            : state.source === 'cache'
+              ? 'Signal is unreachable: serving the last flags saved to disk.'
+              : 'No flags yet: every value is its fallback.';
+        updatedAt = Date.now();
+      }
+
+      async function refresh() {
+        renderShoppers();
+        const res = await fetch(`/api/state?shopper=${encodeURIComponent(shopper)}`);
+        render(await res.json());
+      }
+
+      const live = document.getElementById('live');
+      function setLive(on, text) {
+        live.classList.toggle('on', on);
+        live.querySelector('span').textContent = text;
+      }
+      setInterval(() => {
+        if (!live.classList.contains('on')) return;
+        const seconds = Math.round((Date.now() - updatedAt) / 1000);
+        setLive(true, seconds < 2 ? 'Live · just updated' : `Live · updated ${seconds}s ago`);
+      }, 1000);
+
+      const events = new EventSource('/events');
+      events.onopen = () => setLive(true, 'Live');
+      events.onerror = () => setLive(false, 'Reconnecting…');
+      events.onmessage = () => refresh();
+
+      refresh();
+    </script>
+  </body>
+</html>

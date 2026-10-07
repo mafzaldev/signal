@@ -2,10 +2,12 @@
   "name": "@signal/demo",
   "version": "1.0.0",
   "private": true,
-  "description": "Prints a flag's value and updates live when it changes",
+  "description": "A demo storefront whose layout and copy come from Signal flags",
   "type": "module",
   "scripts": {
-    "start": "node src/index.ts",
+    "seed": "node src/seed.ts",
+    "start": "node src/server.ts",
+    "watch": "node src/cli.ts",
     "lint": "eslint src",
     "typecheck": "tsc"
   },
