@@ -3,7 +3,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createClient, type ClientOptions, type FlagsClient } from './client.js';
+import { Signal, type SignalOptions } from './client.js';
 import { fileStorage } from './node.js';
 import { type FlagStorage, parseCache, serializeCache } from './storage.js';
 
@@ -40,10 +40,10 @@ const SDK_KEY = 'sdk-resilience-test-key';
 const user = { key: 'user-1' };
 const quietLogger = { warn: () => {}, error: () => {} };
 const tick = (ms = 5) => new Promise((resolve) => setTimeout(resolve, ms));
-let client: FlagsClient | undefined;
+let client: Signal | undefined;
 
-function connect(options: Partial<ClientOptions>) {
-  client = createClient({
+function connect(options: Partial<SignalOptions>) {
+  client = new Signal({
     sdkKey: SDK_KEY,
     baseUrl: 'http://flags.test',
     logger: quietLogger,
@@ -80,9 +80,9 @@ describe('persistent cache', () => {
     const storage = memoryStorage(serializeCache(SDK_KEY, ruleset(boolFlag('f', true))));
     const flags = connect({ storage, fetch: unreachable });
 
-    expect(await flags.waitForInitialization({ timeout: 100 })).toBe(true);
-    expect(flags.getDataSource()).toBe('cache');
-    expect(flags.boolVariation('f', user, false)).toBe(true);
+    expect(await flags.ready({ timeout: 100 })).toBe(true);
+    expect(flags.dataSource()).toBe('cache');
+    expect(flags.bool('f', user, false)).toBe(true);
   });
 
   it('ignores a cache saved for another key', async () => {
@@ -91,13 +91,13 @@ describe('persistent cache', () => {
     );
     const flags = connect({ storage, fetch: unreachable });
 
-    expect(await flags.waitForInitialization({ timeout: 50 })).toBe(false);
-    expect(flags.boolVariation('f', user, false)).toBe(false);
+    expect(await flags.ready({ timeout: 50 })).toBe(false);
+    expect(flags.bool('f', user, false)).toBe(false);
   });
 
   it('ignores an unreadable cache', async () => {
     const flags = connect({ storage: memoryStorage('{not json'), fetch: unreachable });
-    expect(await flags.waitForInitialization({ timeout: 50 })).toBe(false);
+    expect(await flags.ready({ timeout: 50 })).toBe(false);
   });
 
   it('replaces cached flags with server flags and saves them', async () => {
@@ -110,8 +110,8 @@ describe('persistent cache', () => {
     const changes: string[] = [];
     flags.on('change', (key) => changes.push(key));
 
-    await vi.waitFor(() => expect(flags.getDataSource()).toBe('server'));
-    expect(flags.boolVariation('f', user, false)).toBe(true);
+    await vi.waitFor(() => expect(flags.dataSource()).toBe('server'));
+    expect(flags.bool('f', user, false)).toBe(true);
     expect(changes).toEqual(['f']);
 
     await flags.close();
@@ -145,7 +145,7 @@ describe('polling', () => {
     let current = ruleset(boolFlag('f', false, 1));
     const fetch = flagsServer(() => current);
     const flags = connect({ streaming: false, pollIntervalMs: 20, fetch });
-    await flags.waitForInitialization();
+    await flags.ready();
 
     await tick(50);
     const etags = fetch.mock.calls.map(
@@ -155,15 +155,15 @@ describe('polling', () => {
     expect(etags.slice(1).every(Boolean)).toBe(true);
 
     current = ruleset(boolFlag('f', true, 2));
-    await vi.waitFor(() => expect(flags.boolVariation('f', user, false)).toBe(true));
+    await vi.waitFor(() => expect(flags.bool('f', user, false)).toBe(true));
   });
 
   it('falls back to polling while the stream keeps failing', async () => {
     const fetch = flagsServer(() => ruleset(boolFlag('f', true)));
     const flags = connect({ fetch });
 
-    expect(await flags.waitForInitialization({ timeout: 500 })).toBe(true);
-    expect(flags.boolVariation('f', user, false)).toBe(true);
+    expect(await flags.ready({ timeout: 500 })).toBe(true);
+    expect(flags.bool('f', user, false)).toBe(true);
     const urls = fetch.mock.calls.map(([url]) => String(url));
     expect(urls.filter((u) => u.endsWith('/sdk/stream')).length).toBeGreaterThanOrEqual(2);
   });

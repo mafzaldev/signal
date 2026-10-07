@@ -17,29 +17,29 @@ npm install @mafzaldev/signal
 Create an SDK key for an environment in the dashboard (project settings → SDK keys), then:
 
 ```ts
-import { createClient } from '@mafzaldev/signal';
+import { Signal } from '@mafzaldev/signal';
 import { fileStorage } from '@mafzaldev/signal/node';
 
-const flags = createClient({
-  sdkKey: process.env.FLAGS_SDK_KEY!,
-  baseUrl: 'https://flags.example.com',
+const signal = new Signal({
+  sdkKey: process.env.SIGNAL_SDK_KEY!,
+  baseUrl: 'https://signal.example.com',
   storage: fileStorage('.flags-cache.json'),
 });
 
-await flags.waitForInitialization({ timeout: 3000 });
+await signal.ready({ timeout: 3000 });
 
 const user = { key: 'user-42', country: 'PK', plan: 'pro' };
 
-if (flags.boolVariation('new-checkout', user, false)) {
+if (signal.bool('new-checkout', user, false)) {
   // new checkout
 }
 
-const color = flags.stringVariation('button-color', user, 'blue');
+const color = signal.string('button-color', user, 'blue');
 
-flags.on('change', (key) => console.log(`${key} changed`));
+signal.on('change', (key) => console.log(`${key} changed`));
 ```
 
-Create one client when your app starts and reuse it. Call `await flags.close()` on shutdown.
+Create one client when your app starts and reuse it. Call `await signal.close()` on shutdown.
 
 ## Contexts
 
@@ -54,7 +54,7 @@ Values can be strings, numbers, booleans, or arrays of those.
 ## Options
 
 ```ts
-createClient(options);
+new Signal(options);
 ```
 
 | Option                    | Default        | Description                                                                                                                                                |
@@ -79,16 +79,16 @@ Each method takes the flag key, a context and a default value, and **never throw
 - the flag's value is a different type than the method returns,
 - something unexpected goes wrong.
 
-| Method                                           | Returns                             |
-| ------------------------------------------------ | ----------------------------------- |
-| `boolVariation(key, context, default: boolean)`  | `boolean`                           |
-| `stringVariation(key, context, default: string)` | `string`                            |
-| `numberVariation(key, context, default: number)` | `number`                            |
-| `jsonVariation(key, context, default)`           | any JSON value                      |
-| `variation(key, context, default)`               | any flag value                      |
-| `variationDetail(key, context, default)`         | `{ value, variationIndex, reason }` |
+| Method                                  | Returns                             |
+| --------------------------------------- | ----------------------------------- |
+| `bool(key, context, default: boolean)`  | `boolean`                           |
+| `string(key, context, default: string)` | `string`                            |
+| `number(key, context, default: number)` | `number`                            |
+| `json(key, context, default)`           | any JSON value                      |
+| `value(key, context, default)`          | any flag value                      |
+| `detail(key, context, default)`         | `{ value, variationIndex, reason }` |
 
-`variationDetail` explains the result:
+`detail` explains the result:
 
 | `reason.kind`  | Meaning                                                                                                                           |
 | -------------- | --------------------------------------------------------------------------------------------------------------------------------- |
@@ -100,13 +100,13 @@ Each method takes the flag key, a context and a default value, and **never throw
 
 ## Lifecycle
 
-| Method                                | Description                                                                                                                     |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `waitForInitialization({ timeout? })` | Resolves `true` once flags are available, from the cache or the server, or `false` on timeout or an invalid key. Never rejects. |
-| `isInitialized()`                     | Whether flags are available                                                                                                     |
-| `getDataSource()`                     | `'none'`, `'cache'` or `'server'`: where the flags being served came from                                                       |
-| `on(event, listener)`                 | Adds a listener and returns a function that removes it                                                                          |
-| `close()`                             | Stops streaming or polling and resolves once pending cache writes finish. Flags stay readable.                                  |
+| Method                | Description                                                                                                                     |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `ready({ timeout? })` | Resolves `true` once flags are available, from the cache or the server, or `false` on timeout or an invalid key. Never rejects. |
+| `isReady()`           | Whether flags are available                                                                                                     |
+| `dataSource()`        | `'none'`, `'cache'` or `'server'`: where the flags being served came from                                                       |
+| `on(event, listener)` | Adds a listener and returns a function that removes it                                                                          |
+| `close()`             | Stops streaming or polling and resolves once pending cache writes finish. Flags stay readable.                                  |
 
 | Event    | Listener                 | When                                                  |
 | -------- | ------------------------ | ----------------------------------------------------- |
@@ -117,7 +117,7 @@ Each method takes the flag key, a context and a default value, and **never throw
 ## When the flag service is unavailable
 
 - **While running**, the SDK keeps serving the flags it already has and reconnects with exponential backoff and jitter. If the stream keeps failing, for example behind a proxy that blocks SSE, it also fetches flags between attempts, sending an ETag so unchanged flags cost almost nothing.
-- **On startup**, with `storage` set, it loads the last saved flags before connecting, so `waitForInitialization()` resolves with those flags even if the service is down. When the service answers, its flags replace the cached ones and `change` fires for anything that differs.
+- **On startup**, with `storage` set, it loads the last saved flags before connecting, so `ready()` resolves with those flags even if the service is down. When the service answers, its flags replace the cached ones and `change` fires for anything that differs.
 - **Quiet connections** that miss heartbeats for `streamTimeoutMs` are reopened.
 - **An invalid or revoked key** stops the client and emits `error`. Flags already loaded stay readable.
 

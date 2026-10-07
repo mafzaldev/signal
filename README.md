@@ -54,24 +54,24 @@ Then:
 1. Open http://localhost:3000, create an account and an organization.
 2. Create a project, then a flag called `new-checkout`.
 3. In the project's settings, create an SDK key for `production`.
-4. Run the demo: `FLAGS_SDK_KEY=<key> pnpm --filter @signal/demo start`
+4. Run the demo: `SIGNAL_SDK_KEY=<key> pnpm --filter @signal/demo start`
 5. Toggle `new-checkout` in production. The demo prints the new values within a second.
 6. Stop the API and start the demo again: it still prints the last values, from its cache.
 
 ## Using the SDK
 
 ```ts
-import { createClient } from '@mafzaldev/signal';
+import { Signal } from '@mafzaldev/signal';
 import { fileStorage } from '@mafzaldev/signal/node';
 
-const flags = createClient({
-  sdkKey: process.env.FLAGS_SDK_KEY!,
+const signal = new Signal({
+  sdkKey: process.env.SIGNAL_SDK_KEY!,
   baseUrl: 'http://localhost:4000',
   storage: fileStorage('.flags-cache.json'),
 });
-await flags.waitForInitialization({ timeout: 3000 });
+await signal.ready({ timeout: 3000 });
 
-if (flags.boolVariation('new-checkout', { key: user.id, country: user.country }, false)) {
+if (signal.bool('new-checkout', { key: user.id, country: user.country }, false)) {
   // new checkout
 }
 ```

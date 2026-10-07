@@ -1,7 +1,6 @@
 export {
-  createClient,
-  FlagsClient,
-  type ClientOptions,
+  Signal,
+  type SignalOptions,
   type DataSource,
   type DetailReason,
   type ErrorKind,

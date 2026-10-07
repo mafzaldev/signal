@@ -1,4 +1,4 @@
-import { createClient } from '@mafzaldev/signal';
+import { Signal } from '@mafzaldev/signal';
 import request from 'supertest';
 import { createApp, signUpWithOrganization } from './helpers.js';
 
@@ -14,14 +14,14 @@ describe('shutdown (e2e)', () => {
       .set('Cookie', cookie)
       .send({ name: 'k' });
 
-    const client = createClient({
+    const client = new Signal({
       sdkKey: created.body.key,
       baseUrl: await app.getUrl(),
       logger: { warn() {}, error() {} },
       // Keep the client from reconnecting before the server is gone.
       initialReconnectDelayMs: 60_000,
     });
-    expect(await client.waitForInitialization({ timeout: 2000 })).toBe(true);
+    expect(await client.ready({ timeout: 2000 })).toBe(true);
 
     const closed = app.close().then(() => 'closed');
     const timedOut = new Promise((resolve) => setTimeout(() => resolve('timed out'), 3000));

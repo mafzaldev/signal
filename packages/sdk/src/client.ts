@@ -12,9 +12,9 @@ import {
 import { parseSse } from './sse.js';
 import { type FlagStorage, parseCache, serializeCache } from './storage.js';
 
-export interface ClientOptions {
+export interface SignalOptions {
   sdkKey: string;
-  /** Base URL of the flags API, e.g. `https://flags.example.com`. */
+  /** Base URL of the flags API, e.g. `https://signal.example.com`. */
   baseUrl: string;
   /**
    * Receive changes live over SSE (default). When false, flags are polled every
@@ -61,9 +61,13 @@ type Events = {
 
 class InvalidKeyError extends Error {}
 
-export class FlagsClient {
-  private readonly options: Required<Omit<ClientOptions, 'fetch' | 'storage'>> &
-    Pick<ClientOptions, 'storage'> & { fetch: typeof fetch };
+/**
+ * Reads one environment's flags. It downloads them, keeps them up to date over Server-Sent
+ * Events and evaluates them in-process. Create one when your app starts and reuse it.
+ */
+export class Signal {
+  private readonly options: Required<Omit<SignalOptions, 'fetch' | 'storage'>> &
+    Pick<SignalOptions, 'storage'> & { fetch: typeof fetch };
   private flags = new Map<string, Flag>();
   private segments: Record<string, Segment> = {};
   private readonly listeners: { [E in keyof Events]: Set<Events[E]> } = {
@@ -81,7 +85,7 @@ export class FlagsClient {
   private readonly initialization: Promise<boolean>;
   private settleInitialization!: (initialized: boolean) => void;
 
-  constructor(options: ClientOptions) {
+  constructor(options: SignalOptions) {
     this.options = {
       streaming: true,
       logger: console,
@@ -102,7 +106,7 @@ export class FlagsClient {
    * longer than `timeout` ms. Never rejects: until flags load, every
    * evaluation returns its default value.
    */
-  waitForInitialization({ timeout }: { timeout?: number } = {}): Promise<boolean> {
+  ready({ timeout }: { timeout?: number } = {}): Promise<boolean> {
     if (timeout === undefined) return this.initialization;
     return Promise.race([
       this.initialization,
@@ -110,15 +114,15 @@ export class FlagsClient {
     ]);
   }
 
-  isInitialized() {
+  isReady() {
     return this.initialized;
   }
 
-  getDataSource(): DataSource {
+  dataSource(): DataSource {
     return this.source;
   }
 
-  variationDetail<T extends FlagValue>(
+  detail<T extends FlagValue>(
     key: string,
     context: Context,
     defaultValue: T,
@@ -150,24 +154,24 @@ export class FlagsClient {
     }
   }
 
-  variation<T extends FlagValue>(key: string, context: Context, defaultValue: T): FlagValue {
-    return this.variationDetail(key, context, defaultValue).value;
+  value<T extends FlagValue>(key: string, context: Context, defaultValue: T): FlagValue {
+    return this.detail(key, context, defaultValue).value;
   }
 
-  boolVariation(key: string, context: Context, defaultValue: boolean): boolean {
-    return this.variationDetail(key, context, defaultValue, isBoolean).value;
+  bool(key: string, context: Context, defaultValue: boolean): boolean {
+    return this.detail(key, context, defaultValue, isBoolean).value;
   }
 
-  stringVariation(key: string, context: Context, defaultValue: string): string {
-    return this.variationDetail(key, context, defaultValue, isString).value;
+  string(key: string, context: Context, defaultValue: string): string {
+    return this.detail(key, context, defaultValue, isString).value;
   }
 
-  numberVariation(key: string, context: Context, defaultValue: number): number {
-    return this.variationDetail(key, context, defaultValue, isNumber).value;
+  number(key: string, context: Context, defaultValue: number): number {
+    return this.detail(key, context, defaultValue, isNumber).value;
   }
 
-  jsonVariation<T extends JsonValue>(key: string, context: Context, defaultValue: T): JsonValue {
-    return this.variationDetail<JsonValue>(key, context, defaultValue).value;
+  json<T extends JsonValue>(key: string, context: Context, defaultValue: T): JsonValue {
+    return this.detail<JsonValue>(key, context, defaultValue).value;
   }
 
   /** Returns a function that removes the listener. */
@@ -191,7 +195,7 @@ export class FlagsClient {
       try {
         (listener as (...a: Parameters<Events[E]>) => void)(...args);
       } catch (error) {
-        this.options.logger.error('[flags] listener threw', error);
+        this.options.logger.error('[signal] listener threw', error);
       }
     }
   }
@@ -208,7 +212,7 @@ export class FlagsClient {
       const ruleset = parseCache(sdkKey, await storage.get());
       if (ruleset) this.applyRuleset(ruleset, 'cache');
     } catch (error) {
-      this.options.logger.warn('[flags] could not read the flag cache', error);
+      this.options.logger.warn('[signal] could not read the flag cache', error);
     }
   }
 
@@ -222,7 +226,7 @@ export class FlagsClient {
     this.saving = this.saving
       .then(() => storage.set(value))
       .catch((error: unknown) =>
-        this.options.logger.warn('[flags] could not save the flag cache', error),
+        this.options.logger.warn('[signal] could not save the flag cache', error),
       );
   }
 
@@ -260,7 +264,7 @@ export class FlagsClient {
       } catch (error) {
         if (this.abort.signal.aborted) return;
         if (error instanceof InvalidKeyError) return this.fail(error);
-        this.options.logger.warn(`[flags] polling failed: ${describeError(error)}`);
+        this.options.logger.warn(`[signal] polling failed: ${describeError(error)}`);
       }
       await this.sleep(this.options.pollIntervalMs);
     }
@@ -298,7 +302,7 @@ export class FlagsClient {
         if (this.abort.signal.aborted) return;
         if (error instanceof InvalidKeyError) return this.fail(error);
         this.options.logger.warn(
-          `[flags] stream disconnected (${describeError(error)}), reconnecting`,
+          `[signal] stream disconnected (${describeError(error)}), reconnecting`,
         );
       } finally {
         clearTimeout(watchdog);
@@ -333,7 +337,7 @@ export class FlagsClient {
 
   private fail(error: unknown) {
     const err = error instanceof Error ? error : new Error(String(error));
-    this.options.logger.error('[flags]', err.message);
+    this.options.logger.error('[signal]', err.message);
     this.emit('error', err);
     this.settleInitialization(false);
   }
@@ -392,7 +396,3 @@ function describeError(error: unknown): string {
 const isBoolean = (v: FlagValue): v is boolean => typeof v === 'boolean';
 const isString = (v: FlagValue): v is string => typeof v === 'string';
 const isNumber = (v: FlagValue): v is number => typeof v === 'number';
-
-export function createClient(options: ClientOptions) {
-  return new FlagsClient(options);
-}

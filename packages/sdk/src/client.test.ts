@@ -1,6 +1,6 @@
 import type { Flag, Ruleset, StreamEvent } from '@signal/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createClient, type FlagsClient } from './client.js';
+import { Signal } from './client.js';
 
 function boolFlag(key: string, enabled: boolean, version = 1): Flag {
   return {
@@ -54,10 +54,10 @@ function fakeServer() {
 
 const quietLogger = { warn: () => {}, error: () => {} };
 const user = { key: 'user-1' };
-let client: FlagsClient | undefined;
+let client: Signal | undefined;
 
 function connect(server: ReturnType<typeof fakeServer>) {
-  client = createClient({
+  client = new Signal({
     sdkKey: 'sdk-test',
     baseUrl: 'http://flags.test/',
     fetch: server.fetch,
@@ -72,20 +72,20 @@ const tick = () => new Promise((resolve) => setTimeout(resolve, 5));
 
 afterEach(() => client?.close());
 
-describe('FlagsClient', () => {
+describe('Signal', () => {
   it('serves defaults until the first ruleset arrives', async () => {
     const server = fakeServer();
     const flags = connect(server);
-    expect(flags.boolVariation('on', user, false)).toBe(false);
-    expect(flags.variationDetail('on', user, false).reason).toEqual({
+    expect(flags.bool('on', user, false)).toBe(false);
+    expect(flags.detail('on', user, false).reason).toEqual({
       kind: 'ERROR',
       errorKind: 'CLIENT_NOT_READY',
     });
 
     await tick();
     server.send({ type: 'put', data: ruleset(boolFlag('on', true)) });
-    expect(await flags.waitForInitialization()).toBe(true);
-    expect(flags.boolVariation('on', user, false)).toBe(true);
+    expect(await flags.ready()).toBe(true);
+    expect(flags.bool('on', user, false)).toBe(true);
   });
 
   it('sends the SDK key to the stream endpoint', async () => {
@@ -105,15 +105,15 @@ describe('FlagsClient', () => {
     flags.on('change', (key) => changes.push(key));
     await tick();
     server.send({ type: 'put', data: ruleset(boolFlag('f', false, 2)) });
-    await flags.waitForInitialization();
+    await flags.ready();
 
     server.send({ type: 'patch', data: { flag: boolFlag('f', true, 1) } });
     await tick();
-    expect(flags.boolVariation('f', user, true)).toBe(false);
+    expect(flags.bool('f', user, true)).toBe(false);
 
     server.send({ type: 'patch', data: { flag: boolFlag('f', true, 3) } });
     await tick();
-    expect(flags.boolVariation('f', user, false)).toBe(true);
+    expect(flags.bool('f', user, false)).toBe(true);
     expect(changes).toEqual(['f']);
   });
 
@@ -122,11 +122,11 @@ describe('FlagsClient', () => {
     const flags = connect(server);
     await tick();
     server.send({ type: 'put', data: ruleset(boolFlag('f', true, 1)) });
-    await flags.waitForInitialization();
+    await flags.ready();
 
     server.send({ type: 'delete', data: { key: 'f', version: 2 } });
     await tick();
-    expect(flags.variationDetail('f', user, false).reason).toEqual({
+    expect(flags.detail('f', user, false).reason).toEqual({
       kind: 'ERROR',
       errorKind: 'FLAG_NOT_FOUND',
     });
@@ -137,12 +137,13 @@ describe('FlagsClient', () => {
     const flags = connect(server);
     await tick();
     server.send({ type: 'put', data: ruleset(boolFlag('f', true)) });
-    await flags.waitForInitialization();
+    await flags.ready();
 
-    expect(flags.stringVariation('f', user, 'fallback')).toBe('fallback');
-    expect(
-      flags.variationDetail('f', user, 'x', (v): v is string => typeof v === 'string').reason,
-    ).toEqual({ kind: 'ERROR', errorKind: 'WRONG_TYPE' });
+    expect(flags.string('f', user, 'fallback')).toBe('fallback');
+    expect(flags.detail('f', user, 'x', (v): v is string => typeof v === 'string').reason).toEqual({
+      kind: 'ERROR',
+      errorKind: 'WRONG_TYPE',
+    });
   });
 
   it('ignores heartbeats', async () => {
@@ -151,7 +152,7 @@ describe('FlagsClient', () => {
     await tick();
     server.send({ type: 'ping', data: '' });
     server.send({ type: 'put', data: ruleset(boolFlag('f', true)) });
-    expect(await flags.waitForInitialization()).toBe(true);
+    expect(await flags.ready()).toBe(true);
   });
 
   it('reconnects after the stream ends and reports what changed meanwhile', async () => {
@@ -159,7 +160,7 @@ describe('FlagsClient', () => {
     const flags = connect(server);
     await tick();
     server.send({ type: 'put', data: ruleset(boolFlag('a', true, 1), boolFlag('b', true, 1)) });
-    await flags.waitForInitialization();
+    await flags.ready();
     const changes: string[] = [];
     flags.on('change', (key) => changes.push(key));
 
@@ -170,7 +171,7 @@ describe('FlagsClient', () => {
     await tick();
 
     expect(changes.sort()).toEqual(['b', 'c']);
-    expect(flags.boolVariation('a', user, false)).toBe(true);
+    expect(flags.bool('a', user, false)).toBe(true);
   });
 
   it('stops and reports an error for an invalid key', async () => {
@@ -180,7 +181,7 @@ describe('FlagsClient', () => {
     const errors: Error[] = [];
     flags.on('error', (error) => errors.push(error));
 
-    expect(await flags.waitForInitialization()).toBe(false);
+    expect(await flags.ready()).toBe(false);
     await tick();
     expect(server.fetch).toHaveBeenCalledTimes(1);
     expect(errors[0]?.message).toBe('Invalid SDK key');
@@ -189,16 +190,16 @@ describe('FlagsClient', () => {
   it('times out waiting for initialization without throwing', async () => {
     const server = fakeServer();
     const flags = connect(server);
-    expect(await flags.waitForInitialization({ timeout: 10 })).toBe(false);
+    expect(await flags.ready({ timeout: 10 })).toBe(false);
   });
 
   it('fetches once when streaming is off', async () => {
     const fetch = vi.fn(
       async () => new Response(JSON.stringify(ruleset(boolFlag('f', true))), { status: 200 }),
     ) as unknown as typeof globalThis.fetch;
-    client = createClient({ sdkKey: 'k', baseUrl: 'http://flags.test', streaming: false, fetch });
-    expect(await client.waitForInitialization()).toBe(true);
-    expect(client.boolVariation('f', user, false)).toBe(true);
+    client = new Signal({ sdkKey: 'k', baseUrl: 'http://flags.test', streaming: false, fetch });
+    expect(await client.ready()).toBe(true);
+    expect(client.bool('f', user, false)).toBe(true);
     expect(vi.mocked(fetch).mock.calls[0]?.[0]).toBe('http://flags.test/sdk/flags');
   });
 });

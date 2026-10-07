@@ -1,5 +1,5 @@
 import { INestApplication } from '@nestjs/common';
-import { createClient, type FlagsClient } from '@mafzaldev/signal';
+import { Signal } from '@mafzaldev/signal';
 import request from 'supertest';
 import { App } from 'supertest/types.js';
 import { addMember, createApp, signUpWithOrganization } from './helpers.js';
@@ -10,7 +10,7 @@ describe('SDK keys and SDK API (e2e)', () => {
   let organizationId: string;
   let sdkKey: string;
   let baseUrl: string;
-  const clients: FlagsClient[] = [];
+  const clients: Signal[] = [];
 
   const api = () => request(app.getHttpServer());
   const keysPath = '/projects/web/environments/production/sdk-keys';
@@ -39,7 +39,7 @@ describe('SDK keys and SDK API (e2e)', () => {
   });
 
   function connect(key = sdkKey) {
-    const client = createClient({
+    const client = new Signal({
       sdkKey: key,
       baseUrl,
       logger: { warn() {}, error() {} },
@@ -124,8 +124,8 @@ describe('SDK keys and SDK API (e2e)', () => {
   describe('live updates through the SDK', () => {
     it('applies a toggle within a second', async () => {
       const client = connect();
-      expect(await client.waitForInitialization({ timeout: 2000 })).toBe(true);
-      expect(client.boolVariation('new-checkout', { key: 'user-1' }, true)).toBe(false);
+      expect(await client.ready({ timeout: 2000 })).toBe(true);
+      expect(client.bool('new-checkout', { key: 'user-1' }, true)).toBe(false);
 
       const changed = new Promise<number>((resolve) =>
         client.on('change', () => resolve(Date.now())),
@@ -135,12 +135,12 @@ describe('SDK keys and SDK API (e2e)', () => {
       const latency = (await changed) - started;
 
       expect(latency).toBeLessThan(1000);
-      expect(client.boolVariation('new-checkout', { key: 'user-1' }, false)).toBe(true);
+      expect(client.bool('new-checkout', { key: 'user-1' }, false)).toBe(true);
     });
 
     it('ignores changes in other environments', async () => {
       const client = connect();
-      await client.waitForInitialization({ timeout: 2000 });
+      await client.ready({ timeout: 2000 });
       const onChange = vi.fn();
       client.on('change', onChange);
 
@@ -151,7 +151,7 @@ describe('SDK keys and SDK API (e2e)', () => {
 
     it('receives new and deleted flags', async () => {
       const client = connect();
-      await client.waitForInitialization({ timeout: 2000 });
+      await client.ready({ timeout: 2000 });
 
       const created = new Promise((resolve) => client.on('change', resolve));
       await api()
@@ -165,12 +165,12 @@ describe('SDK keys and SDK API (e2e)', () => {
         })
         .expect(201);
       expect(await created).toBe('banner');
-      expect(client.stringVariation('banner', { key: 'u' }, 'default')).toBe('a');
+      expect(client.string('banner', { key: 'u' }, 'default')).toBe('a');
 
       const deleted = new Promise((resolve) => client.on('change', resolve));
       await api().delete('/projects/web/flags/banner').set('Cookie', cookie).expect(204);
       expect(await deleted).toBe('banner');
-      expect(client.stringVariation('banner', { key: 'u' }, 'default')).toBe('default');
+      expect(client.string('banner', { key: 'u' }, 'default')).toBe('default');
     });
   });
 
@@ -183,7 +183,7 @@ describe('SDK keys and SDK API (e2e)', () => {
         .expect(201);
       return res.body as { id: string; key: string };
     };
-    const rejected = (client: FlagsClient) =>
+    const rejected = (client: Signal) =>
       new Promise<string>((resolve) => client.on('error', (error) => resolve(error.message)));
 
     it('ends the stream of a revoked key and leaves other keys connected', async () => {
@@ -192,8 +192,8 @@ describe('SDK keys and SDK API (e2e)', () => {
       const revokedClient = connect(revoked.key);
       const keptClient = connect(kept.key);
       await Promise.all([
-        revokedClient.waitForInitialization({ timeout: 2000 }),
-        keptClient.waitForInitialization({ timeout: 2000 }),
+        revokedClient.ready({ timeout: 2000 }),
+        keptClient.ready({ timeout: 2000 }),
       ]);
 
       const error = rejected(revokedClient);
@@ -214,7 +214,7 @@ describe('SDK keys and SDK API (e2e)', () => {
         .expect(201);
       const { key } = await createKey('qa', 'QA key');
       const client = connect(key);
-      await client.waitForInitialization({ timeout: 2000 });
+      await client.ready({ timeout: 2000 });
 
       const error = rejected(client);
       await api().delete('/projects/web/environments/qa').set('Cookie', cookie).expect(204);
