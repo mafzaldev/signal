@@ -1,6 +1,6 @@
 {
   "name": "@mafzaldev/signal",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "TypeScript SDK for Signal feature flags, with live updates and local caching",
   "license": "MIT",
   "type": "module",
