@@ -53,14 +53,18 @@ pnpm --filter @signal/api db:migrate
 pnpm dev
 ```
 
-Then:
+Then try the demo storefront, a small shop whose banner, products, checkout and theme come from flags:
 
-1. Open http://localhost:3000, create an account and an organization.
-2. Create a project, then a flag called `new-checkout`.
-3. In the project's settings, create an SDK key for `production`.
-4. Run the demo: `SIGNAL_SDK_KEY=<key> pnpm --filter @signal/demo start`
-5. Toggle `new-checkout` in production. The demo prints the new values within a second.
-6. Stop the API and start the demo again: it still prints the last values, from its cache.
+```sh
+pnpm --filter @signal/demo seed    # creates a demo account, project, flags and SDK key
+pnpm --filter @signal/demo start   # http://localhost:4100
+```
+
+1. Switch between the example shoppers (Ayesha and Bilal in Pakistan, Sara in the UAE, John in the US) and see each one get a different shop. The "What Signal served" panel shows every flag's value and why.
+2. Sign in to the dashboard at http://localhost:3000 as `demo@signal.dev` / `signal-demo`, open the `shop` project and change a flag in `development`: turn on `dark-mode`, move the `button-color` rollout, add a rule. The open shop updates within a second, without reloading.
+3. Stop the API and restart the shop: it keeps serving the last flags it had, from its cache.
+
+Running the seed again resets the flags to their starting point.
 
 ## Using the SDK
 
@@ -99,7 +103,7 @@ See the [SDK README](packages/sdk/README.md) for every option and method.
 ```
 apps/api        NestJS API (port 4000)
 apps/web        Next.js dashboard (port 3000)
-apps/demo       Node script that prints a flag live via the SDK
+apps/demo       Demo storefront using the SDK
 packages/core   Evaluation engine, shared types and schemas
 packages/sdk    The SDK
 docs/           Documentation
