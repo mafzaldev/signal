@@ -7,7 +7,7 @@ Signal is a self-hosted feature flag service. Teams create projects and flags in
 - **Targeting**: turn flags on per environment, target individual users, write rules on user attributes ("country is PK and plan is not free"), and roll out by percentage with sticky, deterministic bucketing.
 - **Live updates**: a change in the dashboard reaches running apps in under a second over Server-Sent Events, across any number of API instances.
 - **Resilient SDK**: flags are evaluated in-process with no network call per check. If the API goes down, apps keep the flags they have and can even start from a disk cache.
-- **Teams**: organizations with owner, admin, member and viewer roles, joined through invitation links; every flag, project and key change is recorded in an audit log with before and after snapshots.
+- **Teams**: organizations with owner, admin, member and viewer roles, joined through emailed invitations; accounts verify their email address; every flag, project and key change is recorded in an audit log with before and after snapshots.
 - **Typed end to end**: one evaluation engine and one set of Zod schemas shared by the API, the dashboard and the SDK.
 
 ## How it works
@@ -33,7 +33,7 @@ Requires Node 24, pnpm 11 and Docker.
 
 ```sh
 pnpm install
-pnpm db:up      # Postgres on localhost:5433, Redis on localhost:6379
+pnpm db:up      # Postgres on localhost:5433, Redis on localhost:6379, Mailpit on localhost:8025
 ```
 
 Create `apps/api/.env`:
@@ -44,6 +44,11 @@ REDIS_URL=redis://localhost:6379
 BETTER_AUTH_SECRET=   # at least 32 random characters, e.g. `openssl rand -base64 32`
 BETTER_AUTH_URL=http://localhost:4000
 TRUSTED_ORIGINS=http://localhost:3000
+
+# Optional: send email (account verification, invitations). Without it, accounts don't
+# need verifying and invitation links are copied from the dashboard instead.
+SMTP_URL=smtp://localhost:1025   # Mailpit catches everything; see docs/development.md#email for real providers
+EMAIL_FROM="Signal <signal@localhost>"
 ```
 
 Apply migrations and start everything:
@@ -126,4 +131,4 @@ If `pnpm dev` fails with a file watcher error, see [Troubleshooting](docs/develo
 
 ## Status
 
-Done: the evaluation engine, the API with authentication, roles and the audit log, the dashboard (including members and invitations), SDK keys, live updates, and the SDK's offline cache and fallbacks. Next: publishing the SDK to npm, segments and browser support, then deployment and load testing. A/B testing with AI-written result summaries comes after that. See [PLAN.md](PLAN.md).
+Done: the evaluation engine, the API with authentication, roles and the audit log, the dashboard (including members and invitations), email (account verification and invitations through any SMTP provider), SDK keys, live updates, and the SDK's offline cache and fallbacks. Next: publishing the SDK to npm, segments and browser support, then deployment and load testing. A/B testing with AI-written result summaries comes after that. See [PLAN.md](PLAN.md).
