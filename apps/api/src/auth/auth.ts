@@ -4,6 +4,8 @@ import { organization } from 'better-auth/plugins';
 import { asc, eq } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import * as schema from '../db/schema/index.js';
+import { invitationEmail } from '../email/invitation-email.js';
+import { sendEmail } from '../email/mailer.js';
 import { env } from '../env.js';
 import { ac, roles } from './permissions.js';
 
@@ -13,7 +15,23 @@ export const auth = betterAuth({
   trustedOrigins: env.TRUSTED_ORIGINS,
   database: drizzleAdapter(db, { provider: 'pg', schema }),
   emailAndPassword: { enabled: true },
-  plugins: [organization({ ac, roles })],
+  plugins: [
+    organization({
+      ac,
+      roles,
+      // Emails the invitee a link to /invite/<id>; the dashboard also shows it to copy.
+      sendInvitationEmail: ({ id, email, role, organization, inviter }) =>
+        sendEmail(
+          invitationEmail({
+            to: email,
+            inviterName: inviter.user.name,
+            organizationName: organization.name,
+            role,
+            link: `${env.DASHBOARD_URL}/invite/${id}`,
+          }),
+        ),
+    }),
+  ],
   databaseHooks: {
     session: {
       create: {

@@ -25,6 +25,22 @@ export async function signUp(app: INestApplication<App>, name = 'Test User') {
   return { cookie, userId: res.body.user.id as string, email };
 }
 
+const MAILPIT = process.env.TEST_MAILPIT_URL ?? 'http://localhost:8025';
+
+/** Waits for Mailpit to receive an email for `to`, then returns the newest one. */
+export async function emailTo(to: string) {
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const res = await fetch(`${MAILPIT}/api/v1/search?query=${encodeURIComponent(`to:"${to}"`)}`);
+    const { messages } = (await res.json()) as { messages: { ID: string }[] };
+    if (messages.length > 0) {
+      const message = await fetch(`${MAILPIT}/api/v1/message/${messages[0]!.ID}`);
+      return (await message.json()) as { Subject: string; Text: string; HTML: string };
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  throw new Error(`No email arrived for ${to}`);
+}
+
 /** Creates an organization, which also makes it the user's active organization. */
 export async function createOrganization(app: INestApplication<App>, cookie: string, slug: string) {
   const res = await request(app.getHttpServer())

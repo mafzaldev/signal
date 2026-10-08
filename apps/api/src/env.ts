@@ -14,6 +14,14 @@ const envSchema = z.object({
     .string()
     .default('')
     .transform((value) => value.split(',').filter(Boolean)),
+  /**
+   * Where to send email, e.g. `smtp://user:pass@smtp-relay.brevo.com:587`. Without it no
+   * email is sent, and invitations are shared by copying their link.
+   */
+  SMTP_URL: z.url().optional(),
+  EMAIL_FROM: z.string().default('Signal <signal@localhost>'),
+  /** The dashboard's public URL, for links in emails. Defaults to the first trusted origin. */
+  DASHBOARD_URL: z.url().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -21,4 +29,8 @@ if (!parsed.success) {
   throw new Error(`Invalid environment variables:\n${z.prettifyError(parsed.error)}`);
 }
 
-export const env = parsed.data;
+export const env = {
+  ...parsed.data,
+  DASHBOARD_URL:
+    parsed.data.DASHBOARD_URL ?? parsed.data.TRUSTED_ORIGINS[0] ?? 'http://localhost:3000',
+};

@@ -202,8 +202,9 @@ function InviteForm({ myRole, onDone }: { myRole: Role; onDone: () => void }) {
     return (
       <div className="flex flex-1 flex-col gap-4">
         <p className="text-[13px] text-ink-2">
-          Send this link to <span className="font-mono">{result.email}</span>. They sign in or
-          create an account with that email, then accept. It expires in 48 hours.
+          Invitation created for <span className="font-mono">{result.email}</span>. If email is set
+          up they’ll get this link by email; you can also send it yourself. They sign in or create
+          an account with that address, then accept. It expires in 48 hours.
         </p>
         <div className="flex items-center gap-2 rounded-md border border-rule-strong bg-paper py-2 pr-2 pl-3">
           <code className="min-w-0 flex-1 font-mono text-xs break-all">{result.link}</code>
@@ -294,7 +295,7 @@ export function InviteButton({ myRole }: { myRole: Role }) {
         open={open}
         onClose={() => setOpen(false)}
         title="Invite to the organization"
-        description="You’ll get a link to send them. Emails aren’t sent yet."
+        description="They get an email with a link to accept, if email is set up. You can also copy the link."
       >
         <InviteForm myRole={myRole} onDone={() => setOpen(false)} />
       </Sheet>
