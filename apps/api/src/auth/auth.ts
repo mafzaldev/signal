@@ -5,16 +5,40 @@ import { asc, eq } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import * as schema from '../db/schema/index.js';
 import { invitationEmail } from '../email/invitation-email.js';
-import { sendEmail } from '../email/mailer.js';
+import { emailEnabled, sendEmail } from '../email/mailer.js';
+import { verificationEmail } from '../email/verification-email.js';
 import { env } from '../env.js';
 import { ac, roles } from './permissions.js';
+
+/**
+ * Better Auth builds verification links on the API's URL. Opening them on the dashboard
+ * instead (which forwards `/api/auth` to the API) puts the sign-in cookie on the dashboard,
+ * and they land on its confirmation page.
+ */
+function dashboardLink(apiLink: string) {
+  const url = new URL(apiLink);
+  // Better Auth falls back to `/` when the request named no destination.
+  const callback = url.searchParams.get('callbackURL');
+  if (!callback || callback === '/') url.searchParams.set('callbackURL', '/email-verified');
+  return `${env.DASHBOARD_URL}${url.pathname}${url.search}`;
+}
 
 export const auth = betterAuth({
   baseURL: env.BETTER_AUTH_URL,
   secret: env.BETTER_AUTH_SECRET,
   trustedOrigins: env.TRUSTED_ORIGINS,
   database: drizzleAdapter(db, { provider: 'pg', schema }),
-  emailAndPassword: { enabled: true },
+  // With email set up, new accounts must verify their address before they can sign in.
+  // Without it there's no way to deliver the link, so verification is skipped.
+  emailAndPassword: { enabled: true, requireEmailVerification: emailEnabled },
+  emailVerification: {
+    sendOnSignUp: emailEnabled,
+    // Signing in unverified sends a fresh link, e.g. for accounts made before verification.
+    sendOnSignIn: emailEnabled,
+    autoSignInAfterVerification: true,
+    sendVerificationEmail: ({ user, url }) =>
+      sendEmail(verificationEmail({ to: user.email, name: user.name, link: dashboardLink(url) })),
+  },
   plugins: [
     organization({
       ac,

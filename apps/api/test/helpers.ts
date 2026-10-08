@@ -2,7 +2,10 @@ import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types.js';
+import { eq } from 'drizzle-orm';
 import { AppModule } from '../src/app.module.js';
+import { db } from '../src/db/client.js';
+import { user } from '../src/db/schema/index.js';
 
 export async function createApp(): Promise<INestApplication<App>> {
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
@@ -13,16 +16,30 @@ export async function createApp(): Promise<INestApplication<App>> {
 
 let counter = 0;
 
-/** Signs up a fresh user and returns their session cookie. */
+/** The `name=value` pairs of a response's cookies, ready for a `Cookie` header. */
+export function cookieFrom(res: request.Response) {
+  const setCookies = (res.headers['set-cookie'] ?? []) as unknown as string[];
+  return setCookies.map((c) => c.split(';')[0]).join('; ');
+}
+
+/**
+ * Signs up a fresh user and returns their session cookie. Email is configured in these
+ * tests, so accounts start unverified; this marks them verified directly, then signs in.
+ * `verification.e2e-spec.ts` covers the real emailed-link flow.
+ */
 export async function signUp(app: INestApplication<App>, name = 'Test User') {
   const email = `user-${Date.now()}-${counter++}@example.com`;
+  const password = 'password-123456';
   const res = await request(app.getHttpServer())
     .post('/api/auth/sign-up/email')
-    .send({ name, email, password: 'password-123456' })
+    .send({ name, email, password })
     .expect(200);
-  const setCookies = (res.headers['set-cookie'] ?? []) as unknown as string[];
-  const cookie = setCookies.map((c) => c.split(';')[0]).join('; ');
-  return { cookie, userId: res.body.user.id as string, email };
+  await db.update(user).set({ emailVerified: true }).where(eq(user.email, email));
+  const signIn = await request(app.getHttpServer())
+    .post('/api/auth/sign-in/email')
+    .send({ email, password })
+    .expect(200);
+  return { cookie: cookieFrom(signIn), userId: res.body.user.id as string, email };
 }
 
 const MAILPIT = process.env.TEST_MAILPIT_URL ?? 'http://localhost:8025';
