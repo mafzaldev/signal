@@ -1,35 +1,54 @@
 import { escapeHtml, layout } from './layout.js';
 import type { Email } from './mailer.js';
 
-/** "Ali Khan invited you to join Acme Inc on Signal", with a button to accept. */
+/** What each role lets the invitee do, finishing "you'll be able to …". */
+const CAN_DO: Record<string, (organization: string) => string> = {
+  owner: (org) => `manage everything in ${org}, including its members, projects and settings`,
+  admin: (org) => `manage ${org}'s projects, environments, SDK keys and members`,
+  member: () => 'create, change and roll out feature flags across its projects',
+  viewer: (org) => `see ${org}'s projects, flags and the history of every change`,
+};
+
+/**
+ * "Ali Khan invited you to join Acme Inc on Signal", saying what the role allows and who
+ * sent it, with a button to accept.
+ */
 export function invitationEmail({
   to,
   inviterName,
+  inviterEmail,
   organizationName,
   role,
   link,
 }: {
   to: string;
   inviterName: string;
+  inviterEmail: string;
   organizationName: string;
   role: string;
   link: string;
 }): Email {
   const subject = `${inviterName} invited you to join ${organizationName} on Signal`;
-  const article = role === 'admin' ? 'an' : 'a';
+  const article = role === 'admin' || role === 'owner' ? 'an' : 'a';
+  const canDo = (CAN_DO[role] ?? CAN_DO.member!)(organizationName);
+  const footer =
+    "The invitation expires in 48 hours. If you weren't expecting it, you can ignore this email.";
+
   const text = `${subject}.
 
-You've been invited as ${article} ${role}. Open this link to accept:
+As ${article} ${role} of ${organizationName}, you'll be able to ${canDo}.
+Sent by ${inviterName} (${inviterEmail}).
+
+Open this link to accept:
 ${link}
 
-The invitation expires in 48 hours. If you weren't expecting it, you can ignore this email.`;
+${footer}`;
 
   const html = layout({
     heading: subject,
-    body: `You've been invited as ${article} <strong style="color:#ededea">${escapeHtml(role)}</strong>. Accept to start working on ${escapeHtml(organizationName)}'s feature flags.`,
+    body: `As ${article} <strong style="color:#ededea">${escapeHtml(role)}</strong> of ${escapeHtml(organizationName)}, you'll be able to ${escapeHtml(canDo)}.<br><span style="font-size:13px;color:#8d8d86">Sent by ${escapeHtml(inviterName)} (${escapeHtml(inviterEmail)}).</span>`,
     button: { label: 'Accept invitation', href: link },
-    footer:
-      "The invitation expires in 48 hours. If you weren't expecting it, you can ignore this email.",
+    footer,
   });
 
   return { to, subject, text, html };

@@ -29,5 +29,9 @@ describe('invitations (e2e)', () => {
     const link = `http://localhost:3000/invite/${invitation.body.id}`;
     expect(message.Text).toContain(link);
     expect(message.HTML).toContain(link);
+    expect(message.Text).toContain(
+      "As a member of invites, you'll be able to create, change and roll out feature flags",
+    );
+    expect(message.Text).toContain(`Sent by Test User (${owner.email}).`);
   });
 });

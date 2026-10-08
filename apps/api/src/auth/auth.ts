@@ -49,6 +49,7 @@ export const auth = betterAuth({
           invitationEmail({
             to: email,
             inviterName: inviter.user.name,
+            inviterEmail: inviter.user.email,
             organizationName: organization.name,
             role,
             link: `${env.DASHBOARD_URL}/invite/${id}`,
