@@ -1,4 +1,4 @@
-<img src="docs/assets/logo.svg" alt="" width="56" height="56">
+<img src="apps/web/src/app/icon.svg" alt="" width="56" height="56">
 
 # Signal
 
