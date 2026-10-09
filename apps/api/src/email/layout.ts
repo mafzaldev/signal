@@ -60,7 +60,7 @@ export function layout({
           </td></tr>
           <tr><td style="padding:20px 8px 0;font-size:12px;line-height:1.6;color:#8d8d86">
             ${escapeHtml(footer)}<br>
-            Signal · Feature flags for your team
+            Signal · Release control for your team
           </td></tr>
         </table>
       </td></tr>

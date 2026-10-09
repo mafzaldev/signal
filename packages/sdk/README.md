@@ -1,6 +1,6 @@
 # @mafzaldev/signal
 
-Server-side TypeScript SDK for Signal, a self-hosted feature flag service. It downloads an environment's flags, keeps them up to date over Server-Sent Events, and evaluates them in your process, so checking a flag never makes a network call. If the flag service goes down, your app keeps serving the last flags it had, even across restarts.
+Server-side TypeScript SDK for Signal, the self-hosted release control platform. It downloads an environment's flags, keeps them up to date over Server-Sent Events, and evaluates them in your process, so checking a flag never makes a network call. If Signal goes down, your app keeps serving the last flags it had, even across restarts.
 
 - No dependencies
 - ESM and CommonJS, with TypeScript types
@@ -114,7 +114,7 @@ Each method takes the flag key, a context and a default value, and **never throw
 | `change` | `(key: string) => void`  | A flag was added, changed or removed                  |
 | `error`  | `(error: Error) => void` | The SDK key was rejected; the client stops connecting |
 
-## When the flag service is unavailable
+## When Signal is unavailable
 
 - **While running**, the SDK keeps serving the flags it already has and reconnects with exponential backoff and jitter. If the stream keeps failing, for example behind a proxy that blocks SSE, it also fetches flags between attempts, sending an ETag so unchanged flags cost almost nothing.
 - **On startup**, with `storage` set, it loads the last saved flags before connecting, so `ready()` resolves with those flags even if the service is down. When the service answers, its flags replace the cached ones and `change` fires for anything that differs.

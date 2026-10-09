@@ -120,9 +120,7 @@ export function AuthForm({ mode, next }: { mode: 'sign-in' | 'sign-up'; next?: s
   return (
     <AuthCard
       title={signUp ? 'Create your account' : 'Welcome back'}
-      description={
-        signUp ? 'Start managing feature flags for your team.' : 'Sign in to manage your flags.'
-      }
+      description={signUp ? 'Take control of every release.' : 'Sign in to manage your releases.'}
       footer={
         <>
           {signUp ? 'Already have an account? ' : 'New here? '}

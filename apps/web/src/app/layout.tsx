@@ -16,7 +16,7 @@ const mono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: 'Signal',
-  description: 'Feature flags and rollouts',
+  description: 'Release control, targeting and live rollouts',
 };
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {

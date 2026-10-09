@@ -2,7 +2,7 @@
 
 # Signal
 
-Signal is a self-hosted feature flag service. Teams create projects and flags in a dashboard, roll them out to specific users or a percentage of traffic, and apps read them through a TypeScript SDK that updates live and keeps working when the service is down.
+Signal is a self-hosted release control platform. Ship code dark, decide who sees it, roll it out by percentage and switch it off in under a second. Teams manage releases in a dashboard, and apps read them through a TypeScript SDK that evaluates in-process, updates live and keeps working when Signal is down.
 
 - **Targeting**: turn flags on per environment, target individual users, write rules on user attributes ("country is PK and plan is not free"), and roll out by percentage with sticky, deterministic bucketing.
 - **Live updates**: a change in the dashboard reaches running apps in under a second over Server-Sent Events, across any number of API instances.
