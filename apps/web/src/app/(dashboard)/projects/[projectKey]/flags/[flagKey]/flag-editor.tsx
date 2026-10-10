@@ -358,7 +358,7 @@ export function FlagEditor({
         </div>
 
         <aside>
-          <section className="border-t border-rule-strong pt-3 xl:sticky xl:top-20">
+          <section className="xl:sticky xl:top-20">
             <h2 className="mb-1 font-semibold">Test a user</h2>
             <p className="mb-5 text-[13px] text-muted">
               What would a user get in {environment.name}?

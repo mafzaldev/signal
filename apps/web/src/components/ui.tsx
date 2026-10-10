@@ -122,7 +122,7 @@ export function Card({
   className?: string;
 }) {
   return (
-    <section className={cx('border-t border-rule-strong', className)}>
+    <section className={className}>
       {(title || actions) && (
         <header className="flex items-start justify-between gap-4 pt-3">
           <div className="min-w-0">
@@ -221,7 +221,7 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex items-start gap-4 border-y border-rule py-10">
+    <div className="flex items-start gap-4 py-10">
       <div className="text-faint">{icon}</div>
       <div>
         <h3 className="font-medium">{title}</h3>

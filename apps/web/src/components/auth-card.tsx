@@ -61,7 +61,7 @@ export function AuthCard({
           <div className="w-full max-w-sm">
             <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
             {description && <p className="mt-1 text-[13px] text-muted">{description}</p>}
-            <div className="mt-8 border-t border-rule pt-6">{children}</div>
+            <div className="mt-8">{children}</div>
             {footer && <p className="mt-8 text-[13px] text-muted">{footer}</p>}
           </div>
         </div>
