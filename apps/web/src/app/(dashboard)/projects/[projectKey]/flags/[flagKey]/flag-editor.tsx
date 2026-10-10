@@ -6,7 +6,7 @@ import { type ReactNode, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { useConfirm } from '@/components/dialog';
 import { EnvironmentDot, environmentTone } from '@/components/environment';
-import { PlusIcon } from '@/components/icons';
+import { ArrowRightIcon, PlusIcon } from '@/components/icons';
 import { Lamp } from '@/components/lamp';
 import { Button, cx, ErrorMessage, Switch } from '@/components/ui';
 import { variationLabel } from '@/lib/targeting';
@@ -110,7 +110,7 @@ function Note({ tone, children }: { tone: 'signal' | 'muted'; children: ReactNod
   return (
     <span
       className={cx(
-        'text-xs font-medium rounded px-1.5',
+        'inline-flex items-center gap-1 text-xs font-medium rounded px-1.5',
         tone === 'signal' ? 'bg-signal text-white' : 'bg-wash text-muted',
       )}
     >
@@ -189,7 +189,15 @@ export function FlagEditor({
     if (state === 'hit' && served !== null) {
       const label = variationLabel(variations, served);
       return (
-        <Note tone="signal">{stage === 'power' ? `Serves ${label}` : `Matched → ${label}`}</Note>
+        <Note tone="signal">
+          {stage === 'power' ? (
+            `Serves ${label}`
+          ) : (
+            <>
+              Matched <ArrowRightIcon className="size-3" /> {label}
+            </>
+          )}
+        </Note>
       );
     }
     if (state === 'bypassed') return <Note tone="muted">Skipped while off</Note>;

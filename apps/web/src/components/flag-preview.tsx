@@ -4,6 +4,7 @@ import { evaluate, type Flag } from '@signal/core';
 import { useState } from 'react';
 import { percentToWeight } from '@/lib/targeting';
 import { EnvironmentDot } from './environment';
+import { ArrowRightIcon } from './icons';
 import { Lamp } from './lamp';
 import { cx, Switch } from './ui';
 
@@ -72,7 +73,13 @@ export function FlagPreview() {
   const summary = (env: EnvironmentKey) => {
     if (!enabled[env]) return 'false';
     if (env === 'staging') return `${stagingPercent}% true`;
-    if (env === 'production') return 'PK → true';
+    if (env === 'production') {
+      return (
+        <span className="inline-flex items-center gap-1">
+          PK <ArrowRightIcon className="size-3" /> true
+        </span>
+      );
+    }
     return 'true';
   };
 
@@ -160,9 +167,9 @@ export function FlagPreview() {
           className="w-24 rounded bg-ink px-1.5 text-paper outline-none focus:ring-2 focus:ring-signal/40"
         />
         <span className="text-faint">in {selected}</span>
-        <span className="text-faint">→</span>
+        <ArrowRightIcon className="size-3.5 text-faint" />
         <span>{step}</span>
-        <span className="text-faint">→</span>
+        <ArrowRightIcon className="size-3.5 text-faint" />
         <span className="flex items-center gap-1.5 text-ink">
           <Lamp on={value === 'true'} className="text-ink" />
           {value}

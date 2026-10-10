@@ -5,6 +5,7 @@ import type {
   ReactNode,
   TextareaHTMLAttributes,
 } from 'react';
+import { ArrowLeftIcon } from './icons';
 
 export function cx(...classes: (string | false | null | undefined)[]) {
   return classes.filter(Boolean).join(' ');
@@ -247,8 +248,12 @@ export function PageHeader({
   return (
     <div className="mb-10 flex flex-col gap-3">
       {back && (
-        <Link href={back.href} className="text-xs font-medium w-fit text-muted hover:text-ink">
-          ← {back.label}
+        <Link
+          href={back.href}
+          className="inline-flex w-fit items-center gap-1.5 text-xs font-medium text-muted hover:text-ink"
+        >
+          <ArrowLeftIcon className="size-3.5" />
+          {back.label}
         </Link>
       )}
       <div className="flex flex-wrap items-end justify-between gap-4">

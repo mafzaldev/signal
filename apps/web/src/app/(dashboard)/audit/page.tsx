@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { EnvironmentDot } from '@/components/environment';
-import { HistoryIcon } from '@/components/icons';
+import { ChevronRightIcon, HistoryIcon } from '@/components/icons';
 import { buttonClass, EmptyState, PageHeader } from '@/components/ui';
 import { api } from '@/lib/api';
 import { describeAuditEntry, fieldLabel } from '@/lib/audit';
@@ -193,9 +193,7 @@ export default async function AuditPage({ searchParams }: PageProps<'/audit'>) {
                               {projectLabel && <span>{projectLabel}</span>}
                             </span>
                           </span>
-                          <span className="font-mono text-xs text-faint group-open:rotate-90">
-                            ›
-                          </span>
+                          <ChevronRightIcon className="size-3.5 text-faint group-open:rotate-90" />
                         </summary>
                         <div className="border-t border-dashed border-rule-strong py-4 pr-3 pl-19">
                           <Changes entry={entry} />

@@ -1,6 +1,7 @@
 import type { Icon, IconProps } from '@phosphor-icons/react';
 import {
   ArrowDownIcon as PhArrowDown,
+  ArrowLeftIcon as PhArrowLeft,
   ArrowRightIcon as PhArrowRight,
   ArrowUpIcon as PhArrowUp,
   CaretDownIcon,
@@ -37,6 +38,7 @@ export const ChevronDownIcon = icon(CaretDownIcon);
 export const ChevronRightIcon = icon(CaretRightIcon);
 export const ArrowUpIcon = icon(PhArrowUp);
 export const ArrowDownIcon = icon(PhArrowDown);
+export const ArrowLeftIcon = icon(PhArrowLeft);
 export const ArrowRightIcon = icon(PhArrowRight);
 export const FlagIcon = icon(PhFlag);
 export const SettingsIcon = icon(GearIcon);
