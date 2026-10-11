@@ -343,25 +343,20 @@ export function FlagEditor({
             />
           </Stage>
 
-          <Stage marker="◼" state={served !== null ? 'hit' : 'idle'} title="Serves" last>
-            <ul className="flex flex-wrap gap-2">
-              {variations.map((_, index) => {
-                const reached = index === served;
-                return (
-                  <li
-                    key={index}
-                    className={cx(
-                      'flex items-center gap-2 rounded-md border px-3 py-2 font-mono text-[13px] transition-colors',
-                      reached ? 'border-ink bg-ink text-paper' : 'border-rule-strong text-muted',
-                    )}
-                  >
-                    <span className={cx('size-2 rounded-full', variationColor(index))} />
-                    {variationLabel(variations, index)}
-                    {reached && <Lamp on className="ml-1" />}
-                  </li>
-                );
-              })}
-            </ul>
+          <Stage marker="◼" state={served !== null ? 'hit' : 'idle'} title="Result" last>
+            {'key' in probe && served !== null ? (
+              <p className="flex flex-wrap items-center gap-2 text-[13px] text-muted">
+                <span className="font-mono text-ink-2">{probe.key}</span> gets
+                <span className="flex items-center gap-2 rounded-md border border-rule-strong bg-surface px-3 py-1.5 font-mono text-ink">
+                  <span className={cx('size-2 rounded-full', variationColor(served))} />
+                  {variationLabel(variations, served)}
+                </span>
+              </p>
+            ) : (
+              <p className="text-[13px] text-muted">
+                Enter a user under Test a user to see what they get.
+              </p>
+            )}
           </Stage>
         </div>
 
