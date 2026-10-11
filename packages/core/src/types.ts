@@ -69,6 +69,8 @@ export interface Flag {
   version: number;
   /** Random per flag; changing it reshuffles rollout buckets. */
   salt: string;
+  /** Whether browser SDKs (client keys) can evaluate this flag. Server SDKs ignore it. */
+  clientSide?: boolean;
   enabled: boolean;
   variations: Variation[];
   offVariation: number;

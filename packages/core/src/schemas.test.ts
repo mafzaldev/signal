@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  clientEvaluateSchema,
   createFlagSchema,
+  createSdkKeySchema,
   keySchema,
   serveSchema,
   updateFlagConfigSchema,
@@ -113,5 +115,35 @@ describe('variationRefsAreValid', () => {
 
   it('fails when an index is out of range', () => {
     expect(variationRefsAreValid(config, 2)).toBe(false);
+  });
+});
+
+describe('createSdkKeySchema', () => {
+  it('defaults to a server key', () => {
+    expect(createSdkKeySchema.parse({ name: 'Backend' }).kind).toBe('server');
+  });
+
+  it('accepts client keys and rejects unknown kinds', () => {
+    expect(createSdkKeySchema.parse({ name: 'Web', kind: 'client' }).kind).toBe('client');
+    expect(createSdkKeySchema.safeParse({ name: 'Web', kind: 'mobile' }).success).toBe(false);
+  });
+});
+
+describe('clientEvaluateSchema', () => {
+  it('accepts a context with attributes', () => {
+    const context = { key: 'user-1', country: 'PK', age: 30, beta: true, tags: ['a', 'b'] };
+    expect(clientEvaluateSchema.parse({ context }).context).toEqual(context);
+  });
+
+  it('requires a key', () => {
+    expect(clientEvaluateSchema.safeParse({ context: { country: 'PK' } }).success).toBe(false);
+    expect(clientEvaluateSchema.safeParse({ context: { key: '' } }).success).toBe(false);
+  });
+
+  it('rejects nested objects and oversized contexts', () => {
+    const nested = { key: 'u', address: { city: 'Lahore' } };
+    expect(clientEvaluateSchema.safeParse({ context: nested }).success).toBe(false);
+    const huge = Object.fromEntries(Array.from({ length: 101 }, (_, i) => [`a${i}`, i]));
+    expect(clientEvaluateSchema.safeParse({ context: { key: 'u', ...huge } }).success).toBe(false);
   });
 });

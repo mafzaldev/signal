@@ -104,6 +104,8 @@ export const createFlagSchema = z
     kind: flagKindSchema.default('boolean'),
     /** Defaults to `[true, false]` for boolean flags; required otherwise. */
     variations: variationsSchema.optional(),
+    /** Lets browser SDKs evaluate the flag. Off by default so internal flags stay private. */
+    clientSide: z.boolean().optional(),
   })
   .refine((flag) => flag.kind === 'boolean' || flag.variations !== undefined, {
     message: 'Variations are required for non-boolean flags',
@@ -119,6 +121,7 @@ export const updateFlagSchema = z.strictObject({
   name: nameSchema.optional(),
   description: descriptionSchema.optional(),
   variations: variationsSchema.optional(),
+  clientSide: z.boolean().optional(),
 });
 export type UpdateFlagInput = z.infer<typeof updateFlagSchema>;
 
@@ -157,5 +160,21 @@ export function variationRefsAreValid(config: VariationRefs, variationCount: num
   return indexes.every((i) => i < variationCount);
 }
 
-export const createSdkKeySchema = z.strictObject({ name: nameSchema });
+export const sdkKeyKindSchema = z.enum(['server', 'client']);
+export type SdkKeyKind = z.infer<typeof sdkKeyKindSchema>;
+
+/** `server` keys read full rulesets and must stay secret; `client` keys are for browsers. */
+export const createSdkKeySchema = z.strictObject({
+  name: nameSchema,
+  kind: sdkKeyKindSchema.default('server'),
+});
 export type CreateSdkKeyInput = z.infer<typeof createSdkKeySchema>;
+
+/** The context a browser sends to be evaluated. Bounded so one request can't be huge. */
+export const contextSchema = z
+  .object({ key: z.string().min(1).max(256) })
+  .catchall(z.union([attributeValueSchema, z.array(attributeValueSchema).max(100)]))
+  .refine((context) => Object.keys(context).length <= 100, 'At most 100 attributes');
+
+export const clientEvaluateSchema = z.strictObject({ context: contextSchema });
+export type ClientEvaluateInput = z.infer<typeof clientEvaluateSchema>;
