@@ -1,3 +1,4 @@
+import type { SdkKeyKind } from '@signal/core/schemas';
 import { createHash, randomBytes } from 'node:crypto';
 
 const PREFIX_LENGTH = 12;
@@ -7,7 +8,8 @@ export function hashSdkKey(key: string) {
   return createHash('sha256').update(key).digest('hex');
 }
 
-export function generateSdkKey() {
-  const key = `sdk-${randomBytes(32).toString('base64url')}`;
+/** Server keys start with `sdk-` and client keys with `client-`, so they're easy to tell apart. */
+export function generateSdkKey(kind: SdkKeyKind) {
+  const key = `${kind === 'server' ? 'sdk' : 'client'}-${randomBytes(32).toString('base64url')}`;
   return { key, keyHash: hashSdkKey(key), keyPrefix: key.slice(0, PREFIX_LENGTH) };
 }

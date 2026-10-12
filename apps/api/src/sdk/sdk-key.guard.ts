@@ -1,11 +1,13 @@
 import {
   CanActivate,
   ExecutionContext,
+  ForbiddenException,
   Inject,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { createParamDecorator } from '@nestjs/common';
+import type { SdkKeyKind } from '@signal/core/schemas';
 import { eq } from 'drizzle-orm';
 import type { Database } from '../db/client.js';
 import { sdkKey } from '../db/schema/index.js';
@@ -18,9 +20,14 @@ interface SdkRequest {
   sdkKeyId?: string;
 }
 
-/** Accepts `Authorization: <key>` or `Authorization: Bearer <key>`. */
-@Injectable()
-export class SdkKeyGuard implements CanActivate {
+/**
+ * Accepts `Authorization: <key>` or `Authorization: Bearer <key>`, but only keys of this
+ * guard's kind: server keys are secret and read full rulesets, client keys are public and
+ * only get evaluated results, so neither may be used on the other's routes.
+ */
+abstract class KeyGuard implements CanActivate {
+  protected abstract readonly kind: SdkKeyKind;
+
   constructor(@Inject(DB) private readonly db: Database) {}
 
   async canActivate(ctx: ExecutionContext) {
@@ -30,15 +37,34 @@ export class SdkKeyGuard implements CanActivate {
     if (!key) throw new UnauthorizedException('Missing SDK key');
 
     const [row] = await this.db
-      .select({ id: sdkKey.id, environmentId: sdkKey.environmentId })
+      .select({ id: sdkKey.id, environmentId: sdkKey.environmentId, kind: sdkKey.kind })
       .from(sdkKey)
       .where(eq(sdkKey.keyHash, hashSdkKey(key)));
     if (!row) throw new UnauthorizedException('Invalid SDK key');
+    if (row.kind !== this.kind) {
+      throw new ForbiddenException(
+        this.kind === 'server'
+          ? 'Client keys can only be used with browser SDKs'
+          : 'Use a client key in browsers; server keys must stay secret',
+      );
+    }
 
     request.sdkEnvironmentId = row.environmentId;
     request.sdkKeyId = row.id;
     return true;
   }
+}
+
+/** Server SDK routes: full rulesets. */
+@Injectable()
+export class SdkKeyGuard extends KeyGuard {
+  protected readonly kind = 'server';
+}
+
+/** Browser SDK routes: evaluated results only. */
+@Injectable()
+export class ClientKeyGuard extends KeyGuard {
+  protected readonly kind = 'client';
 }
 
 /** The environment the request's SDK key belongs to. Use behind `SdkKeyGuard`. */

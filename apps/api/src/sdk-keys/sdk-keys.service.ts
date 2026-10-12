@@ -43,10 +43,10 @@ export class SdkKeysService {
     return this.db.transaction(async (tx) => {
       const parent = await this.projects.requireProject(actor.organizationId, projectKey, tx);
       const env = await this.projects.requireEnvironment(parent.id, environmentKey, tx);
-      const { key, keyHash, keyPrefix } = generateSdkKey();
+      const { key, keyHash, keyPrefix } = generateSdkKey(input.kind);
       const [created] = await tx
         .insert(sdkKey)
-        .values({ environmentId: env.id, name: input.name, keyHash, keyPrefix })
+        .values({ environmentId: env.id, name: input.name, kind: input.kind, keyHash, keyPrefix })
         .returning(publicColumns);
 
       await this.audit.record(tx, actor, {

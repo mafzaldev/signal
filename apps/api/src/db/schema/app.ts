@@ -1,5 +1,5 @@
 import type { Rule, Serve, Target, Variation } from '@signal/core';
-import type { FlagKind } from '@signal/core/schemas';
+import type { FlagKind, SdkKeyKind } from '@signal/core/schemas';
 import { sql } from 'drizzle-orm';
 import {
   boolean,
@@ -132,8 +132,8 @@ export const sdkKey = pgTable(
       .notNull()
       .references(() => environment.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),
-    /** `server` keys receive full rulesets. Client keys come with browser support. */
-    kind: text('kind').$type<'server'>().notNull().default('server'),
+    /** `server` keys receive full rulesets; `client` keys only get evaluated results. */
+    kind: text('kind').$type<SdkKeyKind>().notNull().default('server'),
     keyHash: text('key_hash').notNull().unique(),
     /** First characters of the key, so people can tell keys apart. */
     keyPrefix: text('key_prefix').notNull(),
