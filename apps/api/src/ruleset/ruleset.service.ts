@@ -49,6 +49,7 @@ export class RulesetService {
         environmentId: flagConfig.environmentId,
         key: flag.key,
         salt: flag.salt,
+        clientSide: flag.clientSide,
         variations: flag.variations,
         version: flagConfig.version,
         enabled: flagConfig.enabled,

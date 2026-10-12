@@ -1,0 +1,1 @@
+ALTER TABLE "flag" ADD COLUMN "client_side" boolean DEFAULT false NOT NULL;

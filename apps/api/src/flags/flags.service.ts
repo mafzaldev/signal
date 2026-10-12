@@ -129,6 +129,7 @@ export class FlagsService {
             description: input.description,
             kind: input.kind,
             variations: input.variations ?? BOOLEAN_VARIATIONS,
+            clientSide: input.clientSide,
           })
           .returning();
 
@@ -201,8 +202,11 @@ export class FlagsService {
       });
       return after!;
     });
-    // Only variations affect evaluation; name and description changes stay out of SDKs.
-    if (input.variations) await this.rulesets.flagChanged(updated.id);
+    // Name and description changes stay out of SDKs. Client-side access changes what
+    // browsers may evaluate, so it's published too.
+    if (input.variations || input.clientSide !== undefined) {
+      await this.rulesets.flagChanged(updated.id);
+    }
     return updated;
   }
 

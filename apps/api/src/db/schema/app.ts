@@ -68,6 +68,8 @@ export const flag = pgTable(
     salt: text('salt')
       .notNull()
       .default(sql`gen_random_uuid()::text`),
+    /** Whether browser SDKs (client keys) can evaluate this flag. */
+    clientSide: boolean('client_side').notNull().default(false),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
