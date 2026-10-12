@@ -6,10 +6,12 @@ import { eq } from 'drizzle-orm';
 import { AppModule } from '../src/app.module.js';
 import { db } from '../src/db/client.js';
 import { user } from '../src/db/schema/index.js';
+import { setupApp } from '../src/setup.js';
 
 export async function createApp(): Promise<INestApplication<App>> {
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
   const app = moduleRef.createNestApplication<INestApplication<App>>({ bodyParser: false });
+  setupApp(app);
   await app.init();
   return app;
 }
