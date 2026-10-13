@@ -11,6 +11,21 @@ import { Badge, Button, ErrorMessage, Field, Input } from '@/components/ui';
 import type { Environment, SdkKey } from '@/lib/types';
 import { createSdkKey, revokeSdkKey } from '../../actions';
 
+const KEY_KINDS = [
+  {
+    value: 'server',
+    label: 'Server',
+    description:
+      'For backends. Keep it secret: it reads every rule, so never ship it in a web page.',
+  },
+  {
+    value: 'client',
+    label: 'Client',
+    description:
+      'For browsers. Safe to make public: it only gets each user’s values, for flags with client-side access on.',
+  },
+] as const;
+
 function CreateKeyForm({
   projectKey,
   environment,
@@ -47,6 +62,29 @@ function CreateKeyForm({
       <Field label="Name" hint="Where the key is used, so you know what breaks if you revoke it.">
         <Input name="name" placeholder="e.g. Checkout service" required autoFocus />
       </Field>
+      <fieldset className="flex flex-col gap-1.5">
+        <legend className="mb-1.5 text-xs font-medium text-muted">Type</legend>
+        <div className="flex flex-col gap-2">
+          {KEY_KINDS.map((kind) => (
+            <label
+              key={kind.value}
+              className="flex cursor-pointer gap-3 rounded-md border border-rule-strong px-3 py-2.5 transition-colors hover:bg-wash has-checked:border-signal has-checked:bg-signal-wash"
+            >
+              <input
+                type="radio"
+                name="kind"
+                value={kind.value}
+                defaultChecked={kind.value === 'server'}
+                className="mt-0.5 accent-signal"
+              />
+              <span>
+                <span className="block text-[13px] font-medium text-ink">{kind.label}</span>
+                <span className="mt-0.5 block text-xs text-muted">{kind.description}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
       <ErrorMessage>{state?.error}</ErrorMessage>
       <SheetActions>
         <Button variant="secondary" onClick={onDone}>
@@ -95,7 +133,7 @@ function EnvironmentKeys({
               <KeyIcon className="size-4 text-muted" />
               <span className="font-medium">{key.name}</span>
               <code className="font-mono text-xs text-muted">{key.keyPrefix}…</code>
-              <Badge>{key.kind}</Badge>
+              <Badge tone={key.kind === 'client' ? 'sky' : 'zinc'}>{key.kind}</Badge>
               <span className="ml-auto text-xs text-muted">
                 Created {new Date(key.createdAt).toLocaleDateString()}
               </span>
@@ -129,7 +167,7 @@ function EnvironmentKeys({
         open={creating}
         onClose={() => setCreating(false)}
         title={`New SDK key for ${environment.name}`}
-        description="Server-side apps use it to read this environment’s flags."
+        description="Apps use it to read this environment’s flags: server keys on backends, client keys in browsers."
       >
         <CreateKeyForm
           projectKey={projectKey}

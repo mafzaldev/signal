@@ -115,6 +115,22 @@ export async function updateFlag(
   return result;
 }
 
+/** Lets browser SDKs (client keys) evaluate the flag, or stops them. */
+export async function setFlagClientSide(
+  projectKey: string,
+  flagKey: string,
+  clientSide: boolean,
+): Promise<ActionResult> {
+  const result = await toActionResult(() =>
+    api(`/projects/${projectKey}/flags/${flagKey}`, {
+      method: 'PATCH',
+      body: json({ clientSide }),
+    }),
+  );
+  refresh();
+  return result;
+}
+
 export async function deleteFlag(projectKey: string, flagKey: string) {
   await api(`/projects/${projectKey}/flags/${flagKey}`, { method: 'DELETE' });
   redirectFresh(`/projects/${projectKey}`);
@@ -148,7 +164,7 @@ export async function createSdkKey(
   try {
     const created = await api<{ key: string }>(
       `/projects/${projectKey}/environments/${environmentKey}/sdk-keys`,
-      { method: 'POST', body: json({ name: text(form, 'name') }) },
+      { method: 'POST', body: json({ name: text(form, 'name'), kind: text(form, 'kind') }) },
     );
     refresh();
     return { ok: true, key: created.key };

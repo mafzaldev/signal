@@ -1,5 +1,5 @@
 import type { Rule, Serve, Target, Variation } from '@signal/core';
-import type { FlagKind } from '@signal/core/schemas';
+import type { FlagKind, SdkKeyKind } from '@signal/core/schemas';
 
 export interface SessionData {
   user: { id: string; name: string; email: string };
@@ -35,6 +35,8 @@ export interface FlagSummary {
   description: string;
   kind: FlagKind;
   variations: Variation[];
+  /** Whether browser SDKs (client keys) can evaluate it. */
+  clientSide: boolean;
   environments: FlagConfigSummary[];
 }
 
@@ -104,7 +106,7 @@ export interface InvitationDetail extends Invitation {
 export interface SdkKey {
   id: string;
   name: string;
-  kind: 'server';
+  kind: SdkKeyKind;
   keyPrefix: string;
   createdAt: string;
 }

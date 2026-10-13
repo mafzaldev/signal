@@ -1,11 +1,11 @@
 'use client';
 
-import { useActionState, useEffect, useTransition } from 'react';
+import { useActionState, useEffect, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { useConfirm } from '@/components/dialog';
-import { Button, ErrorMessage, Field, Input, SettingsSection } from '@/components/ui';
+import { Button, ErrorMessage, Field, Input, SettingsSection, Switch } from '@/components/ui';
 import type { FlagDetail } from '@/lib/types';
-import { deleteFlag, updateFlag } from '../../../actions';
+import { deleteFlag, setFlagClientSide, updateFlag } from '../../../actions';
 import { VariationsInput } from '../../variations-input';
 
 export function FlagSettings({ projectKey, flag }: { projectKey: string; flag: FlagDetail }) {
@@ -14,6 +14,8 @@ export function FlagSettings({ projectKey, flag }: { projectKey: string; flag: F
     undefined,
   );
   const [deleting, startDeleting] = useTransition();
+  const [clientSide, setClientSide] = useState(flag.clientSide);
+  const [savingAccess, startSavingAccess] = useTransition();
   const confirm = useConfirm();
 
   useEffect(() => {
@@ -55,6 +57,32 @@ export function FlagSettings({ projectKey, flag }: { projectKey: string; flag: F
             </Button>
           </div>
         </form>
+      </SettingsSection>
+
+      <SettingsSection
+        title="Client-side access"
+        description="Lets browser SDKs, using a client key, get this flag’s value. Leave it off for flags only your servers read."
+      >
+        <label className="flex items-center gap-3 text-[13px]">
+          <Switch
+            checked={clientSide}
+            disabled={savingAccess}
+            label="Available to client-side SDKs"
+            onChange={(next) => {
+              setClientSide(next);
+              startSavingAccess(async () => {
+                const result = await setFlagClientSide(projectKey, flag.key, next);
+                if (result?.error) {
+                  setClientSide(!next);
+                  toast.error(result.error);
+                } else {
+                  toast.success(next ? 'Browsers can now read this flag' : 'Hidden from browsers');
+                }
+              });
+            }}
+          />
+          Available to client-side SDKs
+        </label>
       </SettingsSection>
 
       <SettingsSection
