@@ -1,10 +1,10 @@
 /**
  * Sets up everything the storefront needs: a demo account, organization and project, five
- * flags with targeting, and an SDK key. Safe to run again: existing things are reused and
+ * flags with targeting and client-side access, and a client key for the browser SDK. Safe to run again: existing things are reused and
  * the flags' targeting is reset to the starting point.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { DEMO_FILE, ENVIRONMENT, PROJECT } from './shop.ts';
+import { DEMO_FILE, ENVIRONMENT, FLAGS, PROJECT } from './shop.ts';
 
 if (existsSync('.env')) process.loadEnvFile('.env');
 
@@ -120,6 +120,11 @@ async function main() {
     variations: [{ value: null }, { value: { text: 'Free shipping in Pakistan this week' } }],
   });
 
+  // The storefront reads every flag from the browser, so they all need client-side access.
+  for (const { key } of Object.values(FLAGS)) {
+    await call('PATCH', `${flags}/${key}`, { clientSide: true });
+  }
+
   // One kind of result per flag, so every reason shows up somewhere in the demo.
   const configure = (key: string, config: unknown) =>
     call('PATCH', `${flags}/${key}/environments/${ENVIRONMENT}`, config);
@@ -157,17 +162,17 @@ async function main() {
 
   // Keep the key from an earlier run; the API only reveals a key when it's created.
   const saved = existsSync(DEMO_FILE)
-    ? (JSON.parse(readFileSync(DEMO_FILE, 'utf8')) as { sdkKey?: string })
+    ? (JSON.parse(readFileSync(DEMO_FILE, 'utf8')) as { clientKey?: string })
     : {};
-  let sdkKey = saved.sdkKey;
-  if (!sdkKey) {
-    ({ key: sdkKey } = await call<{ key: string }>(
+  let clientKey = saved.clientKey;
+  if (!clientKey) {
+    ({ key: clientKey } = await call<{ key: string }>(
       'POST',
       `/projects/${PROJECT.key}/environments/${ENVIRONMENT}/sdk-keys`,
-      { name: 'Demo storefront' },
+      { name: 'Demo storefront', kind: 'client' },
     ));
   }
-  writeFileSync(DEMO_FILE, `${JSON.stringify({ sdkKey }, null, 2)}\n`);
+  writeFileSync(DEMO_FILE, `${JSON.stringify({ clientKey }, null, 2)}\n`);
 
   console.log(`Demo ready.
 
@@ -175,7 +180,7 @@ async function main() {
   Dashboard:   ${DASHBOARD}/projects/${PROJECT.key}
                sign in as ${ACCOUNT.email} / ${ACCOUNT.password} to change the flags
 
-The SDK key is saved in apps/demo/${DEMO_FILE}.`);
+The client key is saved in apps/demo/${DEMO_FILE}.`);
 }
 
 main().catch((error: unknown) => {

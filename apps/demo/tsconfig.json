@@ -2,11 +2,13 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "noEmit": true,
-    // Node runs this file directly by stripping types, so only erasable syntax is allowed.
+    // The seed script runs directly in Node by stripping types, so only erasable syntax is allowed.
     "erasableSyntaxOnly": true,
-    // Imports name the .ts files Node actually loads.
+    // Imports name the .ts files Node and Vite actually load.
     "allowImportingTsExtensions": true,
-    "types": ["node"]
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "types": ["node", "vite/client"]
   },
-  "include": ["src"]
+  "include": ["src", "vite.config.ts"]
 }

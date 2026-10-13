@@ -1,9 +1,9 @@
-/** What the demo storefront needs from Signal, shared by the seed script and the server. */
+/** What the demo storefront needs from Signal, shared by the seed script and the React app. */
 
 export const PROJECT = { key: 'shop', name: 'Demo Shop' };
 export const ENVIRONMENT = 'development';
 
-/** Where the seed script saves the SDK key, so `pnpm start` works without any setup. */
+/** Where the seed script saves the client key, so `pnpm start` works without any setup. */
 export const DEMO_FILE = '.signal-demo.json';
 
 /** Example shoppers to switch between. Their attributes are what the flags target. */
@@ -18,7 +18,7 @@ export type Banner = { text: string } | null;
 
 /**
  * The flags the storefront reads, each with the value it falls back to when Signal can't
- * answer. Kept in one list so the server and the page agree on keys and types.
+ * answer. Kept in one list so the seed script and the page agree on keys and types.
  */
 export const FLAGS = {
   newCheckout: { key: 'new-checkout', fallback: false },

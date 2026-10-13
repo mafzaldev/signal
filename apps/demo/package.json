@@ -2,16 +2,24 @@
   "name": "@signal/demo",
   "version": "1.0.0",
   "private": true,
-  "description": "A demo storefront whose layout and copy come from Signal flags",
+  "description": "A React storefront whose layout and copy come from Signal flags, read with the browser SDK",
   "type": "module",
   "scripts": {
     "seed": "node src/seed.ts",
-    "start": "node src/server.ts",
-    "watch": "node src/cli.ts",
-    "lint": "eslint src",
+    "start": "vite",
+    "build": "vite build",
+    "lint": "eslint src vite.config.ts",
     "typecheck": "tsc"
   },
   "dependencies": {
-    "@mafzaldev/signal": "workspace:*"
+    "@mafzaldev/signal": "workspace:*",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "vite": "^8.3.4"
   }
 }
