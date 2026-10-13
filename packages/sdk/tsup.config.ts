@@ -1,7 +1,7 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: ['src/index.ts', 'src/node.ts'],
+  entry: ['src/index.ts', 'src/node.ts', 'src/browser.ts'],
   format: ['esm', 'cjs'],
   // Core's types are bundled from its source, so the published .d.ts files don't import
   // the internal package (core's own build splits them into chunks the SDK wouldn't ship).
