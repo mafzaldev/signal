@@ -9,6 +9,7 @@ import {
   type Segment,
   type StreamEvent,
 } from '@signal/core';
+import { describeError, reconnectDelay, sleep } from './retry.js';
 import { parseSse } from './sse.js';
 import { type FlagStorage, parseCache, serializeCache } from './storage.js';
 
@@ -318,21 +319,11 @@ export class Signal {
 
   private reconnectDelay(attempt: number) {
     const { initialReconnectDelayMs, maxReconnectDelayMs } = this.options;
-    const base = Math.min(maxReconnectDelayMs, initialReconnectDelayMs * 2 ** attempt);
-    // Jitter spreads reconnects out so clients don't all retry at the same moment.
-    return base / 2 + Math.random() * (base / 2);
+    return reconnectDelay(attempt, initialReconnectDelayMs, maxReconnectDelayMs);
   }
 
   private sleep(ms: number) {
-    return new Promise<void>((resolve) => {
-      const done = () => {
-        clearTimeout(timer);
-        this.abort.signal.removeEventListener('abort', done);
-        resolve();
-      };
-      const timer = setTimeout(done, ms);
-      this.abort.signal.addEventListener('abort', done, { once: true });
-    });
+    return sleep(ms, this.abort.signal);
   }
 
   private fail(error: unknown) {
@@ -383,14 +374,6 @@ export class Signal {
       if (previous.get(key)?.version !== this.flags.get(key)?.version) this.emit('change', key);
     }
   }
-}
-
-/** One line, e.g. "fetch failed: ECONNREFUSED", so outages don't flood logs with stacks. */
-function describeError(error: unknown): string {
-  if (!(error instanceof Error)) return String(error);
-  const cause = error.cause as { code?: string; message?: string } | undefined;
-  const detail = cause?.code ?? cause?.message;
-  return detail ? `${error.message}: ${detail}` : error.message;
 }
 
 const isBoolean = (v: FlagValue): v is boolean => typeof v === 'boolean';
