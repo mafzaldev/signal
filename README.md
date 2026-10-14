@@ -58,16 +58,19 @@ pnpm --filter @signal/api db:migrate
 pnpm dev
 ```
 
-Then try the demo storefront, a small shop whose banner, products, checkout and theme come from flags:
+Then try the demo storefronts: the same small shop, whose banner, products, checkout and theme come from flags, built two ways.
 
 ```sh
-pnpm --filter @signal/demo seed    # creates a demo account, project, flags and SDK key
-pnpm --filter @signal/demo start   # http://localhost:4100
+pnpm --filter @signal/demo seed           # creates a demo account, project, flags and both keys
+pnpm --filter @signal/demo start          # React app with the browser SDK: http://localhost:4100
+pnpm --filter @signal/demo start:server   # rendered on the server with the server SDK: http://localhost:4200
 ```
+
+With email set up (`SMTP_URL`), the first seed creates `demo@signal.dev` unverified and stops. Open the verification email (in Mailpit, at http://localhost:8025, when sending there), then run the seed again.
 
 1. Switch between the example shoppers (Ayesha and Bilal in Pakistan, Sara in the UAE, John in the US) and see each one get a different shop. The "What Signal served" panel shows every flag's value and why.
 2. Sign in to the dashboard at http://localhost:3000 as `demo@signal.dev` / `signal-demo`, open the `shop` project and change a flag in `development`: turn on `dark-mode`, move the `button-color` rollout, add a rule. The open shop updates within a second, without reloading.
-3. Stop the API and restart the shop: it keeps serving the last flags it had, from its cache.
+3. Compare the two in the browser's network tab. The React shop calls `POST /sdk/client/evaluate`, which returns only the shopper's values. The server-rendered shop makes no flag calls at all: its server evaluates every flag in-process and sends finished HTML. Stop the API and restart the server shop: it keeps serving the last flags it had, from its disk cache.
 
 Running the seed again resets the flags to their starting point.
 
@@ -85,6 +88,23 @@ const signal = new Signal({
 await signal.ready({ timeout: 3000 });
 
 if (signal.bool('new-checkout', { key: user.id, country: user.country }, false)) {
+  // new checkout
+}
+```
+
+In the browser, use a **client key** and `@mafzaldev/signal/browser`. The API evaluates flags for the user you pass and sends back only their values, for flags with client-side access turned on:
+
+```ts
+import { SignalClient } from '@mafzaldev/signal/browser';
+
+const signal = new SignalClient({
+  clientKey: 'client-…', // public, safe to ship in a web page
+  baseUrl: 'https://signal.example.com',
+  context: { key: user.id, country: user.country },
+});
+await signal.ready({ timeout: 3000 });
+
+if (signal.bool('new-checkout', false)) {
   // new checkout
 }
 ```
@@ -108,7 +128,7 @@ See the [SDK README](packages/sdk/README.md) for every option and method.
 ```
 apps/api        NestJS API (port 4000)
 apps/web        Next.js dashboard (port 3000)
-apps/demo       Demo storefront using the SDK
+apps/demo       Demo storefronts: React with the browser SDK, server-rendered with the server SDK
 packages/core   Evaluation engine, shared types and schemas
 packages/sdk    The SDK
 docs/           Documentation
@@ -131,4 +151,4 @@ If `pnpm dev` fails with a file watcher error, see [Troubleshooting](docs/develo
 
 ## Status
 
-Done: the evaluation engine, the API with authentication, roles and the audit log, the dashboard (including members and invitations), email (account verification and invitations through any SMTP provider), SDK keys, live updates, and the SDK's offline cache and fallbacks. Next: publishing the SDK to npm, segments and browser support, then deployment and load testing. A/B testing with AI-written result summaries comes after that. See [PLAN.md](PLAN.md).
+Done: the evaluation engine, the API with authentication, roles and the audit log, the dashboard (including members and invitations), email (account verification and invitations through any SMTP provider), SDK keys, live updates, the SDK's offline cache and fallbacks, and the browser SDK with client keys. Next: publishing the SDK to npm and segments, then deployment and load testing. A/B testing with AI-written result summaries comes after that. See [PLAN.md](PLAN.md).

@@ -1,6 +1,6 @@
 # @mafzaldev/signal
 
-Server-side TypeScript SDK for Signal, the self-hosted release control platform. It downloads an environment's flags, keeps them up to date over Server-Sent Events, and evaluates them in your process, so checking a flag never makes a network call. If Signal goes down, your app keeps serving the last flags it had, even across restarts.
+TypeScript SDK for Signal, the self-hosted release control platform. On servers, it downloads an environment's flags, keeps them up to date over Server-Sent Events, and evaluates them in your process, so checking a flag never makes a network call. If Signal goes down, your app keeps serving the last flags it had, even across restarts. In browsers, [`@mafzaldev/signal/browser`](#in-the-browser) gets one user's values from Signal and keeps them live, without ever receiving the rules.
 
 - No dependencies
 - ESM and CommonJS, with TypeScript types
@@ -138,6 +138,37 @@ const redisStorage: FlagStorage = {
 
 `fileStorage(path)` writes to a temporary file and renames it into place, so a crash never leaves a half-written cache.
 
+## In the browser
+
+Browser code uses its own client and a **client key**. Signal evaluates flags on its side for the context you pass and sends back only the results, so rules and the user keys they list never reach the page. A client key is public: it's safe to ship in a web page, because all it can do is ask for values.
+
+Create a client key in the dashboard (project settings → SDK keys → New key → Client), and turn on **Client-side access** in each flag's settings that browsers should read. Flags without it are left out of the results.
+
+```ts
+import { SignalClient } from '@mafzaldev/signal/browser';
+
+const signal = new SignalClient({
+  clientKey: 'client-…',
+  baseUrl: 'https://signal.example.com',
+  context: { key: 'user-42', country: 'PK', plan: 'pro' },
+});
+
+await signal.ready({ timeout: 3000 });
+
+if (signal.bool('new-checkout', false)) {
+  // new checkout
+}
+
+// After sign-in, or when the user changes
+await signal.identify({ key: 'user-77', country: 'AE' });
+
+signal.on('change', (key) => console.log(`${key} changed`));
+```
+
+The methods match the server client, without the context argument: `bool`, `string`, `number`, `json`, `value` and `detail(key, defaultValue)`, plus `allFlags()`, `context()`, `identify(context)`, `ready()`, `isReady()`, `on('ready' | 'change' | 'error')` and `close()`. When a flag changes, Signal tells the page over a stream and the client fetches its values again, so `change` fires within a second.
+
+Options: `clientKey`, `baseUrl` and `context` are required; `streamTimeoutMs`, `fetch`, `logger`, `initialReconnectDelayMs` and `maxReconnectDelayMs` work as on the server client.
+
 ## Security
 
-The SDK receives each flag's full targeting rules, including any user keys they list. Use it only on servers you control, never in browser code. Browser support, with keys that only receive evaluated values, is planned.
+The server client (`Signal`) receives each flag's full targeting rules, including any user keys they list. Use it, and its SDK key, only on servers you control, never in browser code. In browsers, use `SignalClient` with a client key: Signal refuses client keys on the ruleset endpoints and SDK keys on the browser ones.
