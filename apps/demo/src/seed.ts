@@ -1,6 +1,7 @@
 /**
  * Sets up everything the storefront needs: a demo account, organization and project, five
- * flags with targeting and client-side access, and a client key for the browser SDK. Safe to run again: existing things are reused and
+ * flags with targeting and client-side access, a client key for the React shop and an SDK
+ * key for the server-rendered one. Safe to run again: existing things are reused and
  * the flags' targeting is reset to the starting point.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
@@ -160,27 +161,30 @@ async function main() {
     fallthrough: { variation: 0 },
   });
 
-  // Keep the key from an earlier run; the API only reveals a key when it's created.
+  // Keep keys from an earlier run; the API only reveals a key when it's created.
   const saved = existsSync(DEMO_FILE)
-    ? (JSON.parse(readFileSync(DEMO_FILE, 'utf8')) as { clientKey?: string })
+    ? (JSON.parse(readFileSync(DEMO_FILE, 'utf8')) as { clientKey?: string; sdkKey?: string })
     : {};
-  let clientKey = saved.clientKey;
-  if (!clientKey) {
-    ({ key: clientKey } = await call<{ key: string }>(
+  const createKey = async (name: string, kind: 'client' | 'server') => {
+    const created = await call<{ key: string }>(
       'POST',
       `/projects/${PROJECT.key}/environments/${ENVIRONMENT}/sdk-keys`,
-      { name: 'Demo storefront', kind: 'client' },
-    ));
-  }
-  writeFileSync(DEMO_FILE, `${JSON.stringify({ clientKey }, null, 2)}\n`);
+      { name, kind },
+    );
+    return created.key;
+  };
+  const clientKey = saved.clientKey ?? (await createKey('Demo storefront (browser)', 'client'));
+  const sdkKey = saved.sdkKey ?? (await createKey('Demo storefront (server)', 'server'));
+  writeFileSync(DEMO_FILE, `${JSON.stringify({ clientKey, sdkKey }, null, 2)}\n`);
 
   console.log(`Demo ready.
 
-  Storefront:  pnpm --filter @signal/demo start, then open http://localhost:4100
+  Browser SDK: pnpm --filter @signal/demo start, then open http://localhost:4100
+  Server SDK:  pnpm --filter @signal/demo start:server, then open http://localhost:4200
   Dashboard:   ${DASHBOARD}/projects/${PROJECT.key}
                sign in as ${ACCOUNT.email} / ${ACCOUNT.password} to change the flags
 
-The client key is saved in apps/demo/${DEMO_FILE}.`);
+Both keys are saved in apps/demo/${DEMO_FILE}.`);
 }
 
 main().catch((error: unknown) => {

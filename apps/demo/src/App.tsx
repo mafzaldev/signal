@@ -1,66 +1,17 @@
-import type { ClientDetailReason, Context, FlagValue } from '@mafzaldev/signal/browser';
+import type { Context, FlagValue } from '@mafzaldev/signal/browser';
 import { useEffect, useRef, useState } from 'react';
-import { type Banner, ENVIRONMENT, FLAGS, PROJECT, SHOPPERS } from './shop.ts';
+import {
+  type Banner,
+  COLORS,
+  ENVIRONMENT,
+  explain,
+  FLAGS,
+  PRODUCTS,
+  PROJECT,
+  SHOPPERS,
+  show,
+} from './shop.ts';
 import { useSignal } from './signal.tsx';
-
-const COLORS: Record<string, string> = {
-  blue: '#2563eb',
-  green: '#16a34a',
-  orange: '#ea580c',
-};
-const TINTS = ['#f9d7c4', '#cfe3f7', '#d8ecd2', '#f4e3a8', '#e6d5f3', '#f3cfd8'];
-const PRODUCTS = [
-  'Canvas tote',
-  'Field notebook',
-  'Wool beanie',
-  'Desk lamp',
-  'Ceramic mug',
-  'Linen shirt',
-  'Trail socks',
-  'Leather wallet',
-  'Water bottle',
-  'Wall clock',
-  'Rain jacket',
-  'Sketch pens',
-  'Travel pillow',
-  'Cotton scarf',
-  'Plant pot',
-  'Phone stand',
-  'Tea tin',
-  'Card holder',
-  'Throw blanket',
-  'Pocket knife',
-  'Desk mat',
-  'Sun hat',
-  'Key ring',
-  'Wooden tray',
-].map((name, i) => ({
-  name,
-  price: (8 + ((i * 7) % 40)).toFixed(2),
-  tint: TINTS[i % TINTS.length],
-  initials: name
-    .split(' ')
-    .map((word) => word[0])
-    .join(''),
-}));
-
-/** Plain-language reason, the same wording the dashboard's test panel uses. */
-function explain(reason: ClientDetailReason): string {
-  switch (reason.kind) {
-    case 'OFF':
-      return 'Flag is off';
-    case 'TARGET_MATCH':
-      return 'Individually targeted';
-    case 'RULE_MATCH':
-      return `Rule ${String(reason.ruleIndex + 1).padStart(2, '0')} matched`;
-    case 'FALLTHROUGH':
-      return 'Default rule';
-    case 'ERROR':
-      return `Fallback value (${reason.errorKind.toLowerCase().replaceAll('_', ' ')})`;
-  }
-}
-
-const show = (value: FlagValue) => (typeof value === 'string' ? value : JSON.stringify(value));
 
 export function App() {
   const signal = useSignal();

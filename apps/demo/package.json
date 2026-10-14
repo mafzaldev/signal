@@ -2,11 +2,12 @@
   "name": "@signal/demo",
   "version": "1.0.0",
   "private": true,
-  "description": "A React storefront whose layout and copy come from Signal flags, read with the browser SDK",
+  "description": "Two demo storefronts driven by Signal flags: a React app using the browser SDK and a server-rendered shop using the server SDK",
   "type": "module",
   "scripts": {
     "seed": "node src/seed.ts",
     "start": "vite",
+    "start:server": "node src/server.ts",
     "build": "vite build",
     "lint": "eslint src vite.config.ts",
     "typecheck": "tsc"

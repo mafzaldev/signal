@@ -58,7 +58,8 @@ header {
   gap: 4px;
   margin-left: auto;
 }
-.shoppers button {
+.shoppers button,
+.shoppers a {
   border: 1px solid var(--rule);
   background: transparent;
   color: var(--ink);
@@ -66,14 +67,17 @@ header {
   padding: 5px 12px;
   font: inherit;
   font-size: 13px;
+  text-decoration: none;
   cursor: pointer;
 }
-.shoppers button[aria-pressed='true'] {
+.shoppers button[aria-pressed='true'],
+.shoppers a[aria-current='true'] {
   background: var(--ink);
   color: var(--bg);
   border-color: var(--ink);
 }
-.shoppers button small {
+.shoppers button small,
+.shoppers a small {
   opacity: 0.6;
   margin-left: 4px;
 }
