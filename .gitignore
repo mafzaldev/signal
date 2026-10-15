@@ -11,5 +11,6 @@ coverage/
 .DS_Store
 *.log
 next-env.d.ts
+.astro/
 .flags-cache*.json
 .signal-demo.json

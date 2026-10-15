@@ -1,0 +1,311 @@
+---
+import FlagTable from '../components/FlagTable.astro';
+import Base from '../layouts/Base.astro';
+import { links } from '../links';
+
+const steps = [
+  {
+    title: 'Ship it dark',
+    text: 'Merge the new code behind a flag that’s off. It reaches production and nobody sees it.',
+  },
+  {
+    title: 'Try it on your team',
+    text: 'List your own user keys as targets, or add a rule for your company’s email domain.',
+  },
+  {
+    title: 'Roll it out',
+    text: '5%, then 25%, then everyone. Raising the percentage only adds people; nobody flips back.',
+  },
+  {
+    title: 'Switch it off if needed',
+    text: 'One toggle sends everyone back to the old path. Your rollout is kept for when it’s fixed.',
+  },
+  {
+    title: 'Clean up',
+    text: 'At 100% for long enough, delete the check from your code and archive the flag.',
+  },
+];
+
+const history = [
+  { time: '14:32', who: 'Sara', what: 'turned off', subject: 'New checkout', where: 'in Production' },
+  { time: '11:05', who: 'Bilal', what: 'raised', subject: 'New checkout', where: 'to 25% in Production' },
+  { time: '09:48', who: 'Bilal', what: 'added a rule to', subject: 'Promo banner', where: 'in Staging' },
+  { time: '09:12', who: 'Ayesha', what: 'invited', subject: 'john@shop.example', where: 'as a viewer' },
+];
+---
+
+<Base
+  title="Signal · Release control for your team"
+  description="Self-hosted release control: put new code behind flags, decide who sees it, roll it out by percentage and switch it off in under a second."
+>
+  <main>
+    <section class="container hero">
+      <div class="hero-top">
+        <h1>Something broke? <span class="accent">Switch it off.</span></h1>
+        <div class="hero-side">
+          <p>
+            Signal is release control for your team. Put new code behind a flag, decide who sees it,
+            and when something misbehaves, turn it off for everyone. Every connected app follows in
+            under a second.
+          </p>
+          <div class="actions">
+            <a href={links.signUp} class="button button-primary">Get started</a>
+            <a href={links.docs} class="button button-secondary">Read the docs</a>
+          </div>
+        </div>
+      </div>
+      <FlagTable />
+    </section>
+
+    <section id="release" class="band">
+      <div class="container section">
+        <h2>A release with Signal, start to finish.</h2>
+        <ol class="steps">
+          {
+            steps.map((step, index) => (
+              <li class:list={{ done: index < 3 }}>
+                <span class="step-number">{index + 1}</span>
+                <h3>{step.title}</h3>
+                <p>{step.text}</p>
+              </li>
+            ))
+          }
+        </ol>
+      </div>
+    </section>
+
+    <section id="history" class="container section split">
+      <div class="split-text">
+        <h2>Know who changed what.</h2>
+        <p>
+          Every change is saved together with its audit entry, so nothing goes unrecorded. Roles
+          decide who can touch production: owners, admins, members and viewers.
+        </p>
+      </div>
+      <ol class="audit" aria-label="Audit log">
+        {
+          history.map((entry) => (
+            <li>
+              <time>{entry.time}</time>
+              <span>
+                <b>{entry.who}</b> {entry.what} <b>{entry.subject}</b> {entry.where}
+              </span>
+            </li>
+          ))
+        }
+      </ol>
+    </section>
+
+    <section class="closing">
+      <div class="container section closing-inner">
+        <h2>Self-hosted, with an SDK that keeps working when Signal is down.</h2>
+        <p>
+          Run the API, dashboard, Postgres and Redis on your own infrastructure. Servers evaluate
+          flags in memory and cache the last rules on disk; browsers get only each user’s values.
+        </p>
+        <div class="actions">
+          <a href={links.signUp} class="button button-primary">Get started</a>
+          <a href="/docs/self-hosting" class="button button-secondary">Self-hosting guide</a>
+        </div>
+      </div>
+    </section>
+  </main>
+</Base>
+
+<style>
+  .hero {
+    display: flex;
+    flex-direction: column;
+    gap: 56px;
+    padding-block: 72px 96px;
+  }
+
+  .hero-top {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 32px 64px;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  h1 {
+    flex: 1 1 560px;
+    min-width: 0;
+    margin: 0;
+    font-size: clamp(44px, 7vw, 76px);
+    line-height: 0.98;
+    letter-spacing: -0.045em;
+    font-weight: 600;
+  }
+
+  .accent {
+    color: var(--signal);
+  }
+
+  .hero-side {
+    flex: 1 1 340px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding-bottom: 6px;
+  }
+
+  .hero-side p {
+    margin: 0;
+    font-size: 18px;
+    color: var(--ink-2);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .section {
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+    padding-block: 96px;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: clamp(30px, 4vw, 40px);
+    letter-spacing: -0.03em;
+    font-weight: 600;
+    line-height: 1.1;
+    max-width: 16em;
+  }
+
+  .band {
+    background: var(--surface);
+    border-block: 1px solid var(--rule);
+  }
+
+  .steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 32px 24px;
+  }
+
+  .steps li {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    border-top: 2px solid var(--rule-strong);
+    padding-top: 18px;
+  }
+
+  .steps li.done {
+    border-color: var(--signal);
+  }
+
+  .step-number {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .steps li.done .step-number {
+    color: var(--signal-ink);
+  }
+
+  .steps h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .steps p {
+    margin: 0;
+    font-size: 15px;
+    color: var(--ink-2);
+  }
+
+  .split {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 48px 64px;
+  }
+
+  .split-text {
+    flex: 1 1 340px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .split-text p,
+  .closing-inner p {
+    margin: 0;
+    font-size: 17px;
+    color: var(--ink-2);
+    max-width: 38em;
+  }
+
+  .audit {
+    flex: 1 1 480px;
+    min-width: 0;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    overflow: hidden;
+    font-size: 15px;
+  }
+
+  .audit li {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .audit li:last-child {
+    border-bottom: 0;
+  }
+
+  .audit time {
+    width: 52px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--muted);
+    padding-top: 2px;
+  }
+
+  .audit span {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .audit b {
+    font-weight: 600;
+  }
+
+  .closing {
+    border-top: 1px solid var(--rule);
+  }
+
+  .closing-inner {
+    gap: 22px;
+    align-items: flex-start;
+  }
+
+  .closing-inner h2 {
+    font-size: clamp(32px, 5vw, 48px);
+    max-width: 14em;
+  }
+
+  .closing-inner .actions {
+    padding-top: 6px;
+  }
+</style>

@@ -1,0 +1,221 @@
+---
+/**
+ * A still of the dashboard's flag list: every flag in every environment, with new checkout
+ * just switched off in production.
+ */
+type Cell = { on: boolean; label: string; alert?: boolean };
+type Row = { name: string; key: string; cells: Cell[]; highlight?: boolean };
+
+const environments = ['Development', 'Staging', 'Production'];
+const rows: Row[] = [
+  {
+    name: 'New checkout',
+    key: 'new-checkout',
+    highlight: true,
+    cells: [
+      { on: true, label: 'On · 100%' },
+      { on: true, label: 'On · 50%' },
+      { on: false, label: 'Off · everyone gets false', alert: true },
+    ],
+  },
+  {
+    name: 'Button color',
+    key: 'button-color',
+    cells: [
+      { on: true, label: 'On · 50 / 50' },
+      { on: true, label: 'On · 50 / 50' },
+      { on: true, label: 'On · green' },
+    ],
+  },
+  {
+    name: 'Promo banner',
+    key: 'promo-banner',
+    cells: [
+      { on: true, label: 'On · 1 rule' },
+      { on: true, label: 'On · 1 rule' },
+      { on: false, label: 'Off' },
+    ],
+  },
+];
+---
+
+<figure class="panel" aria-label="Flags in each environment, with new checkout switched off in production">
+  <div class="panel-head">
+    <span class="project">Demo Shop · shop</span>
+    <span class="event"><span class="dot"></span>new-checkout turned off in Production · apps updated</span>
+  </div>
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Flag</th>
+          {environments.map((env) => <th scope="col">{env}</th>)}
+        </tr>
+      </thead>
+      <tbody>
+        {
+          rows.map((row) => (
+            <tr class:list={{ highlight: row.highlight }}>
+              <th scope="row">
+                <div>{row.name}</div>
+                <code>{row.key}</code>
+              </th>
+              {row.cells.map((cell) => (
+                <td>
+                  <span class="cell">
+                    <span class:list={['switch', { on: cell.on }]} aria-hidden="true">
+                      <span />
+                    </span>
+                    <span class:list={['state', { alert: cell.alert, off: !cell.on && !cell.alert }]}>
+                      {cell.label}
+                    </span>
+                  </span>
+                </td>
+              ))}
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+</figure>
+
+<style>
+  .panel {
+    margin: 0;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  .panel-head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 22px;
+    border-bottom: 1px solid var(--rule);
+    font-size: 14px;
+  }
+
+  .project {
+    font-weight: 600;
+  }
+
+  .event {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--signal-ink);
+    background: var(--signal-wash);
+    border-radius: 6px;
+    padding: 4px 10px;
+  }
+
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--signal);
+  }
+
+  .scroll {
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    min-width: 640px;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  thead th {
+    text-align: left;
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--muted);
+    padding: 12px 22px;
+    border-bottom: 1px solid var(--rule-strong);
+  }
+
+  tbody th,
+  tbody td {
+    white-space: nowrap;
+    padding: 14px 22px;
+    border-bottom: 1px solid var(--rule);
+    text-align: left;
+  }
+
+  tbody tr:last-child th,
+  tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  tbody th {
+    font-weight: 500;
+  }
+
+  tbody th code {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 400;
+  }
+
+  tr.highlight {
+    background: var(--signal-wash);
+  }
+
+  .cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 32px;
+    height: 18px;
+    border-radius: 9px;
+    border: 1px solid var(--rule-strong);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+
+  .switch span {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--faint);
+  }
+
+  .switch.on {
+    border-color: var(--signal);
+    background: var(--signal);
+  }
+
+  .switch.on span {
+    left: 16px;
+    background: #fff;
+  }
+
+  .state {
+    color: var(--ink-2);
+  }
+
+  .state.alert {
+    color: var(--signal-ink);
+    font-weight: 500;
+  }
+
+  .state.off {
+    color: var(--faint);
+  }
+</style>

@@ -1,0 +1,114 @@
+/*
+ * The dashboard's dark palette, so the site and the app read as one product. `paper` is the
+ * page, `surface` raised panels, `ink` the foreground and `signal` the one accent.
+ */
+:root {
+  --paper: #0f0f0e;
+  --surface: #181817;
+  --wash: #232321;
+  --ink: #ededea;
+  --ink-2: #c2c2bc;
+  --muted: #8d8d86;
+  --faint: #5f5f59;
+  --rule: #2a2a28;
+  --rule-strong: #3e3e3a;
+  --signal: #ff5a14;
+  --signal-ink: #ff8a50;
+  --signal-wash: #2c1a10;
+
+  --font-sans: 'Schibsted Grotesk', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  --width: 1200px;
+  --gutter: 24px;
+
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+a {
+  color: inherit;
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+code,
+pre {
+  font-family: var(--font-mono);
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+/* One centred column with side gutters, used by every section. */
+.container {
+  width: 100%;
+  max-width: var(--width);
+  margin-inline: auto;
+  padding-inline: max(var(--gutter), env(safe-area-inset-left, 0px))
+    max(var(--gutter), env(safe-area-inset-right, 0px));
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 8px;
+  padding: 12px 22px;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s;
+}
+
+.button-primary {
+  background: var(--signal);
+  color: #fff;
+}
+
+.button-primary:hover {
+  background: #ff6e33;
+}
+
+.button-secondary {
+  border: 1px solid var(--rule-strong);
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.button-secondary:hover {
+  background: var(--wash);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}

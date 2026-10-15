@@ -1,0 +1,12 @@
+---
+/** The Signal mark: an indicator lamp lit inside its bezel, as in the dashboard. */
+interface Props {
+  size?: number;
+}
+const { size = 24 } = Astro.props;
+---
+
+<svg viewBox="0 0 32 32" width={size} height={size} aria-hidden="true">
+  <circle cx="16" cy="16" r="11.5" fill="none" stroke="currentColor" stroke-width="2.4"></circle>
+  <circle cx="16" cy="16" r="6" fill="var(--signal)"></circle>
+</svg>

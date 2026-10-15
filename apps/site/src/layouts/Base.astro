@@ -1,0 +1,176 @@
+---
+import '../styles/global.css';
+import Logo from '../components/Logo.astro';
+import { links } from '../links';
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+const path = Astro.url.pathname;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Schibsted+Grotesk:wght@400;500;600;700&display=swap"
+    />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav aria-label="Main" class="container nav">
+        <a href="/" class="brand">
+          <Logo />
+          Signal
+        </a>
+        <div class="nav-links">
+          {path === '/' && <a href="#release">A release</a>}
+          {path === '/' && <a href="#history">History</a>}
+          <a href={links.docs} aria-current={path.startsWith('/docs') ? 'page' : undefined}>Docs</a>
+          <a href={links.signIn} class="sign-in">Sign in</a>
+        </div>
+      </nav>
+    </header>
+
+    <slot />
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <div class="footer-links">
+          <a href={links.docs}>Docs</a>
+          <a href={links.signIn}>Sign in</a>
+          <a href={links.signUp}>Get started</a>
+        </div>
+        <div class="wordmark" aria-hidden="true">Signal</div>
+        <div class="footer-meta">
+          <span>Release control for your team</span>
+          <span>MIT licensed · self-hosted</span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
+
+<style>
+  .site-header {
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px 28px;
+    padding-block: 18px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    font-size: 17px;
+    letter-spacing: -0.01em;
+    text-decoration: none;
+  }
+
+  .nav-links {
+    margin-left: auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 22px;
+    font-size: 14px;
+  }
+
+  .nav-links a {
+    color: var(--ink-2);
+    text-decoration: none;
+  }
+
+  .nav-links a:hover,
+  .nav-links a[aria-current='page'] {
+    color: var(--ink);
+  }
+
+  .nav-links .sign-in {
+    color: var(--ink);
+    font-weight: 600;
+    border: 1px solid var(--rule-strong);
+    border-radius: 8px;
+    padding: 8px 14px;
+  }
+
+  .nav-links .sign-in:hover {
+    background: var(--wash);
+  }
+
+  .site-footer {
+    border-top: 1px solid var(--rule);
+    overflow: hidden;
+  }
+
+  .footer-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding-block: 40px 24px;
+  }
+
+  .footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 24px;
+    font-size: 14px;
+  }
+
+  .footer-links a {
+    color: var(--muted);
+    text-decoration: none;
+  }
+
+  .footer-links a:hover {
+    color: var(--ink);
+  }
+
+  /* Plain text at its natural proportions, sized to the page. */
+  .wordmark {
+    font-size: min(24vw, 300px);
+    font-weight: 700;
+    line-height: 0.92;
+    /* The gradient only paints inside the box, so padding (not line height) makes room for the g. */
+    padding-bottom: 0.16em;
+    letter-spacing: -0.05em;
+    white-space: nowrap;
+    /* Shrinks to the word, so the whole gradient runs across the letters. */
+    align-self: center;
+    background: linear-gradient(135deg, #ffb48c 0%, var(--signal-ink) 45%, var(--signal) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    /* Toned down so it sits behind the footer rather than shouting. */
+    opacity: 0.5;
+  }
+
+  .footer-meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px 24px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--faint);
+  }
+</style>
