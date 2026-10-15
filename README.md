@@ -25,7 +25,7 @@ Signal is a self-hosted release control platform. Ship code dark, decide who see
                              └──────────┘
 ```
 
-The dashboard calls the API, which saves each change together with its audit entry, then publishes it through Redis. Every API instance forwards it to the SDKs connected to it, and each SDK evaluates flags locally from the rules it holds. [docs/architecture.md](docs/architecture.md) has the full picture.
+The dashboard calls the API, which saves each change together with its audit entry, then publishes it through Redis. Every API instance forwards it to the SDKs connected to it, and each SDK evaluates flags locally from the rules it holds. The [introduction](apps/site/src/content/docs/introduction.md) has the full picture.
 
 ## Quick start
 
@@ -47,7 +47,7 @@ TRUSTED_ORIGINS=http://localhost:3000
 
 # Optional: send email (account verification, invitations). Without it, accounts don't
 # need verifying and invitation links are copied from the dashboard instead.
-SMTP_URL=smtp://localhost:1025   # Mailpit catches everything; see docs/development.md#email for real providers
+SMTP_URL=smtp://localhost:1025   # Mailpit catches everything; see apps/site/src/content/docs/self-hosting.md for real providers
 EMAIL_FROM="Signal <signal@localhost>"
 ```
 
@@ -113,15 +113,19 @@ See the [SDK README](packages/sdk/README.md) for every option and method.
 
 ## Documentation
 
-| Document                             | Covers                                                                                                |
-| ------------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| [Glossary](docs/glossary.md)         | Plain definitions of every term used in the project                                                   |
-| [Architecture](docs/architecture.md) | Components, tenancy and roles, how changes propagate, caching, streams, the SDK's connection handling |
-| [Evaluation](docs/evaluation.md)     | The order of checks, condition operators, segments and percentage rollouts                            |
-| [API reference](docs/api.md)         | Authentication, management endpoints, the audit log and the SDK protocol                              |
-| [SDK](packages/sdk/README.md)        | Installing and using the SDK                                                                          |
-| [Development](docs/development.md)   | Setup, environment variables, migrations, tests, CI and troubleshooting                               |
-| [Plan](PLAN.md)                      | The roadmap and decisions behind the project                                                          |
+The docs are part of the site in `apps/site` (run `pnpm --filter @signal/site dev` and open http://localhost:3100/docs) and are written in Markdown in [`apps/site/src/content/docs`](apps/site/src/content/docs):
+
+| Page                                                          | Covers                                                             |
+| ------------------------------------------------------------- | ------------------------------------------------------------------ |
+| [Introduction](apps/site/src/content/docs/introduction.md)    | The pieces of Signal and how a release flows through them          |
+| [Self-hosting](apps/site/src/content/docs/self-hosting.md)    | Running the API and dashboard, configuration, email and production |
+| [Flags and environments](apps/site/src/content/docs/flags.md) | Projects, environments, flag kinds, on/off and client-side access  |
+| [Targeting](apps/site/src/content/docs/targeting.md)          | Contexts, individual targets, rules and the default rule           |
+| [Percentage rollouts](apps/site/src/content/docs/rollouts.md) | Buckets, sticky rollouts and releasing gradually                   |
+| [Server SDK](apps/site/src/content/docs/server-sdk.md)        | Reading flags in your backend                                      |
+| [Browser SDK](apps/site/src/content/docs/browser-sdk.md)      | Reading flags in web pages with a client key                       |
+| [Team and keys](apps/site/src/content/docs/team-and-keys.md)  | Organizations, roles, invitations, SDK keys and the audit log      |
+| [SDK HTTP API](apps/site/src/content/docs/sdk-api.md)         | The endpoints the SDKs use                                         |
 
 ## Repository layout
 
@@ -129,9 +133,9 @@ See the [SDK README](packages/sdk/README.md) for every option and method.
 apps/api        NestJS API (port 4000)
 apps/web        Next.js dashboard (port 3000)
 apps/demo       Demo storefronts: React with the browser SDK, server-rendered with the server SDK
+apps/site       Landing page and public docs, built with Astro (port 3100)
 packages/core   Evaluation engine, shared types and schemas
 packages/sdk    The SDK
-docs/           Documentation
 ```
 
 ## Scripts
@@ -144,11 +148,12 @@ docs/           Documentation
 | `pnpm typecheck`                     | TypeScript                                |
 | `pnpm test`                          | Unit tests                                |
 | `pnpm --filter @signal/api test:e2e` | API end-to-end tests (needs `pnpm db:up`) |
+| `pnpm --filter @signal/site dev`     | Runs the landing page and docs only       |
 | `pnpm format`                        | Prettier                                  |
 | `pnpm db:down`                       | Stops Postgres and Redis                  |
 
-If `pnpm dev` fails with a file watcher error, see [Troubleshooting](docs/development.md#troubleshooting).
+If `pnpm dev` fails with `ENOSPC` or "OS file watch limit reached", raise the limits with `sudo sysctl fs.inotify.max_user_watches=524288 fs.inotify.max_user_instances=512`.
 
 ## Status
 
-Done: the evaluation engine, the API with authentication, roles and the audit log, the dashboard (including members and invitations), email (account verification and invitations through any SMTP provider), SDK keys, live updates, the SDK's offline cache and fallbacks, and the browser SDK with client keys. Next: publishing the SDK to npm and segments, then deployment and load testing. A/B testing with AI-written result summaries comes after that. See [PLAN.md](PLAN.md).
+Done: the evaluation engine, the API with authentication, roles and the audit log, the dashboard (including members and invitations), email (account verification and invitations through any SMTP provider), SDK keys, live updates, the SDK's offline cache and fallbacks, the browser SDK with client keys, and the landing page with public docs. Next: publishing the SDK to npm and segments, then deployment and load testing. A/B testing with AI-written result summaries comes after that.
