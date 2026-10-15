@@ -36,6 +36,9 @@ export interface ClientEvaluationDetail<T> {
   reason: ClientDetailReason;
 }
 
+/** Where the values being served came from. */
+export type ClientDataSource = 'none' | 'server';
+
 type Events = {
   /** The first results arrived. */
   ready: () => void;
@@ -57,6 +60,9 @@ export class SignalClient {
   };
   private currentContext: Context;
   private flags = new Map<string, ClientFlagResult>();
+  private source: ClientDataSource = 'none';
+  /** The context the last values from Signal were evaluated for. */
+  private evaluatedFor: Context | undefined;
   private readonly listeners: { [E in keyof Events]: Set<Events[E]> } = {
     ready: new Set(),
     change: new Set(),
@@ -99,18 +105,31 @@ export class SignalClient {
     ]);
   }
 
+  /** Whether there are values for the current context. */
   isReady() {
-    return this.initialized;
+    return this.source !== 'none';
+  }
+
+  dataSource(): ClientDataSource {
+    return this.source;
   }
 
   context(): Context {
     return this.currentContext;
   }
 
-  /** Switches to another context, e.g. after sign-in, and resolves once its results are in. */
-  identify(context: Context): Promise<void> {
+  /**
+   * Switches to another context, e.g. after sign-in. A different key drops the previous
+   * context's values at once, so they're never shown to someone else: until the new values
+   * arrive, flags serve their defaults.
+   * Resolves `true` once Signal's values for it are in, `false` if Signal couldn't be reached.
+   */
+  async identify(context: Context): Promise<boolean> {
+    const switching = context.key !== this.currentContext.key;
     this.currentContext = context;
-    return this.refresh();
+    if (switching) this.apply({}, 'none');
+    await this.refresh();
+    return this.evaluatedFor === context;
   }
 
   detail<T extends FlagValue>(
@@ -124,7 +143,7 @@ export class SignalClient {
       variationIndex: null,
       reason: { kind: 'ERROR', errorKind },
     });
-    if (!this.initialized) return fallback('CLIENT_NOT_READY');
+    if (this.source === 'none') return fallback('CLIENT_NOT_READY');
     const result = this.flags.get(key);
     if (!result) return fallback('FLAG_NOT_FOUND');
     if (isType && !isType(result.value)) return fallback('WRONG_TYPE');
@@ -224,7 +243,8 @@ export class SignalClient {
       const { flags } = (await res.json()) as ClientEvaluation;
       // A newer context was set while this one was in flight; its own run will apply.
       if (context !== this.currentContext) return;
-      this.apply(flags);
+      this.evaluatedFor = context;
+      this.apply(flags, 'server');
     } catch (error) {
       if (this.abort.signal.aborted) return;
       if (error instanceof InvalidKeyError) return this.fail(error);
@@ -232,9 +252,14 @@ export class SignalClient {
     }
   }
 
-  private apply(flags: ClientEvaluation['flags']) {
+  private apply(flags: ClientEvaluation['flags'], source: ClientDataSource) {
     const previous = this.flags;
     this.flags = new Map(Object.entries(flags));
+    this.source = source;
+    if (source === 'none') {
+      for (const key of previous.keys()) this.emit('change', key);
+      return;
+    }
     if (!this.initialized) {
       this.initialized = true;
       this.settleInitialization(true);

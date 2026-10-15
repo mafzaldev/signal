@@ -160,4 +160,35 @@ describe('SignalClient', () => {
       expect((init?.headers as Record<string, string>).authorization).toBe('client-test');
     }
   });
+
+  describe('when Signal is down', () => {
+    it("drops the previous user's values when switching user", async () => {
+      const server = fakeServer((context) => ({ who: context.key }));
+      const flags = connect(server);
+      await flags.ready({ timeout: 500 });
+      expect(flags.string('who', 'nobody')).toBe('ayesha');
+
+      server.setStatus(503);
+      const changed: string[] = [];
+      flags.on('change', (key) => changed.push(key));
+      expect(await flags.identify({ key: 'bilal' })).toBe(false);
+
+      expect(flags.string('who', 'nobody')).toBe('nobody');
+      expect(flags.dataSource()).toBe('none');
+      expect(flags.detail('who', 'nobody').reason).toEqual({
+        kind: 'ERROR',
+        errorKind: 'CLIENT_NOT_READY',
+      });
+      expect(changed).toEqual(['who']);
+    });
+
+    it('keeps the values when only the attributes change', async () => {
+      const server = fakeServer(() => ({ color: 'green' }));
+      const flags = connect(server);
+      await flags.ready({ timeout: 500 });
+      server.setStatus(503);
+      expect(await flags.identify({ key: 'ayesha', plan: 'pro' })).toBe(false);
+      expect(flags.string('color', 'blue')).toBe('green');
+    });
+  });
 });
