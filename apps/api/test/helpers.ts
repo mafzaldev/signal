@@ -18,6 +18,12 @@ export async function createApp(): Promise<INestApplication<App>> {
 
 let counter = 0;
 
+/**
+ * Better Auth only accepts cookie-carrying writes from a trusted origin, so tests send the
+ * dashboard's, as its server does.
+ */
+export const DASHBOARD_ORIGIN = 'http://localhost:3000';
+
 /** The `name=value` pairs of a response's cookies, ready for a `Cookie` header. */
 export function cookieFrom(res: request.Response) {
   const setCookies = (res.headers['set-cookie'] ?? []) as unknown as string[];
@@ -65,6 +71,7 @@ export async function createOrganization(app: INestApplication<App>, cookie: str
   const res = await request(app.getHttpServer())
     .post('/api/auth/organization/create')
     .set('Cookie', cookie)
+    .set('Origin', DASHBOARD_ORIGIN)
     .send({ name: slug, slug })
     .expect(200);
   return res.body.id as string;
@@ -88,16 +95,19 @@ export async function addMember(
   const invite = await request(app.getHttpServer())
     .post('/api/auth/organization/invite-member')
     .set('Cookie', ownerCookie)
+    .set('Origin', DASHBOARD_ORIGIN)
     .send({ email: user.email, role, organizationId })
     .expect(200);
   await request(app.getHttpServer())
     .post('/api/auth/organization/accept-invitation')
     .set('Cookie', user.cookie)
+    .set('Origin', DASHBOARD_ORIGIN)
     .send({ invitationId: invite.body.id })
     .expect(200);
   await request(app.getHttpServer())
     .post('/api/auth/organization/set-active')
     .set('Cookie', user.cookie)
+    .set('Origin', DASHBOARD_ORIGIN)
     .send({ organizationId })
     .expect(200);
   return user;

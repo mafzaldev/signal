@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types.js';
-import { createApp, emailTo, signUpWithOrganization } from './helpers.js';
+import { createApp, DASHBOARD_ORIGIN, emailTo, signUpWithOrganization } from './helpers.js';
 
 describe('invitations (e2e)', () => {
   let app: INestApplication<App>;
@@ -21,6 +21,7 @@ describe('invitations (e2e)', () => {
     const invitation = await request(app.getHttpServer())
       .post('/api/auth/organization/invite-member')
       .set('Cookie', owner.cookie)
+      .set('Origin', DASHBOARD_ORIGIN)
       .send({ email, role: 'member' })
       .expect(200);
 

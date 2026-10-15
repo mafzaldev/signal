@@ -17,9 +17,12 @@ import { ac, roles } from './permissions.js';
  */
 function dashboardLink(apiLink: string) {
   const url = new URL(apiLink);
-  // Better Auth falls back to `/` when the request named no destination.
-  const callback = url.searchParams.get('callbackURL');
-  if (!callback || callback === '/') url.searchParams.set('callbackURL', '/email-verified');
+  // Better Auth falls back to `/` when the request named no destination. Only a path on the
+  // dashboard is kept, so an emailed link can never send someone to another site, even if
+  // Better Auth's own check of the destination were turned off.
+  const callback = url.searchParams.get('callbackURL') ?? '';
+  const isDashboardPath = callback.startsWith('/') && !callback.startsWith('//');
+  if (!isDashboardPath || callback === '/') url.searchParams.set('callbackURL', '/email-verified');
   return `${env.DASHBOARD_URL}${url.pathname}${url.search}`;
 }
 
@@ -28,6 +31,9 @@ export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
   trustedOrigins: env.TRUSTED_ORIGINS,
   database: drizzleAdapter(db, { provider: 'pg', schema }),
+  // Better Auth skips its origin and redirect checks when NODE_ENV is `test`. Keeping them on
+  // everywhere makes the e2e tests exercise the same protection production has.
+  advanced: { disableOriginCheck: false },
   // With email set up, new accounts must verify their address before they can sign in.
   // Without it there's no way to deliver the link, so verification is skipped.
   emailAndPassword: { enabled: true, requireEmailVerification: emailEnabled },

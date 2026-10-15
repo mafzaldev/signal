@@ -49,4 +49,48 @@ describe('email verification (e2e)', () => {
 
     await api().post('/api/auth/sign-in/email').send({ email, password }).expect(200);
   });
+
+  describe('never redirects to another site after verifying', () => {
+    const evil = 'https://evil.example/phish';
+
+    it('refuses to sign up with an untrusted destination', async () => {
+      const res = await api()
+        .post('/api/auth/sign-up/email')
+        .send({
+          name: 'Target',
+          email: `evil-signup-${Date.now()}@example.com`,
+          password: 'password-123456',
+          callbackURL: evil,
+        })
+        .expect(403);
+      expect(res.body.code).toBe('INVALID_CALLBACK_URL');
+    });
+
+    it('refuses to resend a link with an untrusted destination', async () => {
+      await api()
+        .post('/api/auth/send-verification-email')
+        .send({ email: `evil-resend-${Date.now()}@example.com`, callbackURL: evil })
+        .expect(403);
+    });
+
+    it('refuses a link edited to point at another site', async () => {
+      const email = `evil-edit-${Date.now()}@example.com`;
+      await api()
+        .post('/api/auth/sign-up/email')
+        .send({ name: 'Target', email, password: 'password-123456' })
+        .expect(200);
+      const link = new URL((await emailTo(email)).Text.match(/http\S+verify-email\S+/)![0]);
+      link.searchParams.set('callbackURL', evil);
+
+      const res = await api().get(`${link.pathname}${link.search}`).expect(403);
+      expect(res.headers.location).toBeUndefined();
+    });
+
+    it('refuses a made-up link instead of redirecting with an error', async () => {
+      const res = await api()
+        .get(`/api/auth/verify-email?token=not-a-token&callbackURL=${encodeURIComponent(evil)}`)
+        .expect(403);
+      expect(res.headers.location).toBeUndefined();
+    });
+  });
 });
