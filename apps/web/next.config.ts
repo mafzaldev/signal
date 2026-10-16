@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next';
 
-const apiUrl = process.env.API_URL ?? 'http://localhost:4000';
+// `||`, not `??`: an unset CI variable arrives as an empty string.
+const apiUrl = process.env.API_URL || 'http://localhost:4000';
 
 const nextConfig: NextConfig = {
   agentRules: false,
