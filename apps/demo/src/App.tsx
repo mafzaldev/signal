@@ -183,12 +183,20 @@ export function App() {
   );
 }
 
-/** "Live · updated 3s ago" once results arrive, or why they didn't. */
+/** How long to wait for Signal before saying it's unreachable. */
+const UNREACHABLE_AFTER_MS = 5000;
+
+/**
+ * "Live · updated 3s ago" while values come from Signal. Otherwise says what the page is
+ * showing instead: values saved from an earlier visit, or the defaults in the code.
+ */
 function useLiveStatus() {
   const signal = useSignal();
-  const [updatedAt, setUpdatedAt] = useState<number | null>(signal.isReady() ? Date.now() : null);
+  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
   const [failed, setFailed] = useState(false);
   const [now, setNow] = useState(Date.now());
+  /** When the page last started waiting for Signal's values, e.g. on load or a user switch. */
+  const waitingSince = useRef<number | null>(null);
 
   useEffect(() => {
     const updated = () => setUpdatedAt(Date.now());
@@ -204,9 +212,27 @@ function useLiveStatus() {
     };
   }, [signal]);
 
+  const source = signal.dataSource();
+  if (source === 'server') waitingSince.current = null;
+  else waitingSince.current ??= now;
+  const unreachable = now - (waitingSince.current ?? now) >= UNREACHABLE_AFTER_MS;
+
   if (failed) return { on: false, text: 'Client key rejected' };
-  if (updatedAt === null) return { on: false, text: 'Connecting…' };
-  const seconds = Math.round((now - updatedAt) / 1000);
+  if (source === 'cache') {
+    return {
+      on: false,
+      text: unreachable
+        ? 'Signal unreachable · showing saved values'
+        : 'Showing saved values · connecting…',
+    };
+  }
+  if (source === 'none') {
+    return {
+      on: false,
+      text: unreachable ? 'Signal unreachable · showing defaults' : 'Connecting…',
+    };
+  }
+  const seconds = Math.round((now - (updatedAt ?? now)) / 1000);
   return { on: true, text: seconds < 2 ? 'Live · just updated' : `Live · updated ${seconds}s ago` };
 }
 
