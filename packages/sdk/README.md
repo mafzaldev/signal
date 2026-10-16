@@ -165,9 +165,13 @@ await signal.identify({ key: 'user-77', country: 'AE' });
 signal.on('change', (key) => console.log(`${key} changed`));
 ```
 
-The methods match the server client, without the context argument: `bool`, `string`, `number`, `json`, `value` and `detail(key, defaultValue)`, plus `allFlags()`, `context()`, `identify(context)`, `ready()`, `isReady()`, `on('ready' | 'change' | 'error')` and `close()`. When a flag changes, Signal tells the page over a stream and the client fetches its values again, so `change` fires within a second.
+The methods match the server client, without the context argument: `bool`, `string`, `number`, `json`, `value` and `detail(key, defaultValue)`, plus `allFlags()`, `context()`, `identify(context)`, `ready()`, `isReady()`, `dataSource()`, `on('ready' | 'change' | 'error')` and `close()`. When a flag changes, Signal tells the page over a stream and the client fetches its values again, so `change` fires within a second.
 
-Options: `clientKey`, `baseUrl` and `context` are required; `streamTimeoutMs`, `fetch`, `logger`, `initialReconnectDelayMs` and `maxReconnectDelayMs` work as on the server client.
+`identify(context)` resolves `true` once Signal's values for the new context arrive, `false` if Signal couldn't be reached. Switching to a different key drops the previous context's values at once, so they're never shown to someone else.
+
+The client saves the last values it got in `localStorage`, for the same user only, so a reload while Signal is down shows those instead of defaults; `dataSource()` returns `'cache'` then. Pass `storage: null` to keep nothing, or any object with `getItem` and `setItem`.
+
+Options: `clientKey`, `baseUrl` and `context` are required; `storage` is optional as above; `streamTimeoutMs`, `fetch`, `logger`, `initialReconnectDelayMs` and `maxReconnectDelayMs` work as on the server client.
 
 ## Security
 

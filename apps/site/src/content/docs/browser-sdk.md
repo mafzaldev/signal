@@ -40,7 +40,17 @@ The context is set once, so methods don't take one. When the user signs in or ch
 await signal.identify({ key: 'user-77', country: 'AE' });
 ```
 
-It resolves once the new user's values have arrived. If `identify` is called again before that, only the latest user's values are applied.
+It resolves `true` once the new user's values have arrived from Signal, or `false` if Signal couldn't be reached. If `identify` is called again before that, only the latest user's values are applied.
+
+Switching to a different `key` drops the previous user's values straight away, so one person's flags are never shown to another. Until the new user's values arrive, reads return their saved values if this browser has them, otherwise your defaults. Changing only attributes, with the same `key`, keeps the current values until the new ones arrive.
+
+## When Signal is unavailable
+
+- **While the page is open**, flags keep their last values and the client reconnects with backoff. When Signal is back, it fetches fresh values and `change` fires for anything that differs.
+- **On a reload**, the client starts from the values it saved in `localStorage` for the same user, so the page doesn't fall back to defaults during an outage. `dataSource()` tells you which you have: `'server'`, `'cache'` or `'none'`.
+- **On a first visit with Signal down**, there's nothing saved, so every read returns your default. Make defaults the safe, existing behaviour.
+
+The saved entry holds the last user's evaluated values, never rules, under a key that includes the start of your client key, so environments don't mix. Values are only served back to the same user `key`. Pass `storage: null` to keep nothing, or your own object with `getItem` and `setItem`.
 
 ## Methods
 
@@ -55,7 +65,8 @@ It resolves once the new user's values have arrived. If `identify` is called aga
 | `allFlags()`                             | Every flag's value for the current user                                     |
 | `context()` / `identify(ctx)`            | Read or change the current user                                             |
 | `ready({ timeout? })`                    | Resolves `true` once values arrive, or `false` on timeout or a rejected key |
-| `isReady()`                              | Whether values have arrived                                                 |
+| `isReady()`                              | Whether there are values for the current user, from Signal or the cache     |
+| `dataSource()`                           | `'server'`, `'cache'` or `'none'`: where the current values came from       |
 | `on('ready' \| 'change' \| 'error', fn)` | Adds a listener; returns a function that removes it                         |
 | `close()`                                | Stops listening for changes. Values stay readable                           |
 
@@ -68,6 +79,7 @@ Like the server SDK, every read returns your default until values arrive, for fl
 | `clientKey`               | required       | A client key for the environment                                  |
 | `baseUrl`                 | required       | URL of the Signal API                                             |
 | `context`                 | required       | The first user to evaluate for                                    |
+| `storage`                 | `localStorage` | Where to save the last values; `null` saves nothing               |
 | `streamTimeoutMs`         | `60000`        | Reconnect if nothing, not even a heartbeat, arrives for this long |
 | `initialReconnectDelayMs` | `1000`         | First reconnect delay                                             |
 | `maxReconnectDelayMs`     | `30000`        | Longest reconnect delay                                           |
@@ -99,11 +111,11 @@ function Checkout() {
 
 ## Server or browser?
 
-|                     | Server SDK                                  | Browser SDK                        |
-| ------------------- | ------------------------------------------- | ---------------------------------- |
-| Key                 | Server key, kept secret                     | Client key, public                 |
-| Receives            | Every rule, evaluated in memory             | One user's values                  |
-| Which flags         | All of them                                 | Only those with client-side access |
-| When Signal is down | Serves the last rules, even after a restart | Keeps the values it has            |
+|                     | Server SDK                                  | Browser SDK                                 |
+| ------------------- | ------------------------------------------- | ------------------------------------------- |
+| Key                 | Server key, kept secret                     | Client key, public                          |
+| Receives            | Every rule, evaluated in memory             | One user's values                           |
+| Which flags         | All of them                                 | Only those with client-side access          |
+| When Signal is down | Serves the last rules, even after a restart | Serves the last values, even after a reload |
 
 If your page is rendered on a server you control, reading flags there with the server SDK keeps even the values off the network.

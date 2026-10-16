@@ -5,6 +5,7 @@ import type {
   FlagValue,
   JsonValue,
 } from '@signal/core';
+import { defaultStorage, readCache, type ValueStorage, writeCache } from './browser-cache.js';
 import { describeError, reconnectDelay, sleep } from './retry.js';
 import { parseSse } from './sse.js';
 
@@ -15,6 +16,12 @@ export interface SignalClientOptions {
   baseUrl: string;
   /** Who flags are evaluated for, e.g. the signed-in user. Change it with `identify()`. */
   context: Context;
+  /**
+   * Where to keep the last values, so a reload while Signal is down still shows them.
+   * Defaults to `localStorage`; pass `null` to keep nothing. Values are only served back to
+   * the same context key.
+   */
+  storage?: ValueStorage | null;
   /** Reconnect if nothing, not even a heartbeat, arrives for this long. Default 60s. */
   streamTimeoutMs?: number;
   /** Defaults to the global `fetch`. */
@@ -37,7 +44,7 @@ export interface ClientEvaluationDetail<T> {
 }
 
 /** Where the values being served came from. */
-export type ClientDataSource = 'none' | 'server';
+export type ClientDataSource = 'none' | 'cache' | 'server';
 
 type Events = {
   /** The first results arrived. */
@@ -55,9 +62,10 @@ class InvalidKeyError extends Error {}
  * flag changes, the client asks again. Create one when your app starts and reuse it.
  */
 export class SignalClient {
-  private readonly options: Required<Omit<SignalClientOptions, 'fetch' | 'context'>> & {
+  private readonly options: Required<Omit<SignalClientOptions, 'fetch' | 'context' | 'storage'>> & {
     fetch: typeof fetch;
   };
+  private readonly storage: ValueStorage | null;
   private currentContext: Context;
   private flags = new Map<string, ClientFlagResult>();
   private source: ClientDataSource = 'none';
@@ -78,7 +86,7 @@ export class SignalClient {
   private settleInitialization!: (initialized: boolean) => void;
 
   constructor(options: SignalClientOptions) {
-    const { context, ...rest } = options;
+    const { context, storage, ...rest } = options;
     this.options = {
       logger: console,
       streamTimeoutMs: 60_000,
@@ -88,9 +96,10 @@ export class SignalClient {
       baseUrl: options.baseUrl.replace(/\/+$/, ''),
       fetch: options.fetch ?? globalThis.fetch.bind(globalThis),
     };
+    this.storage = storage === undefined ? defaultStorage() : storage;
     this.currentContext = context;
     this.initialization = new Promise((resolve) => (this.settleInitialization = resolve));
-    void this.stream();
+    void this.start();
   }
 
   /**
@@ -105,7 +114,7 @@ export class SignalClient {
     ]);
   }
 
-  /** Whether there are values for the current context. */
+  /** Whether there are values for the current context, from Signal or the cache. */
   isReady() {
     return this.source !== 'none';
   }
@@ -121,13 +130,16 @@ export class SignalClient {
   /**
    * Switches to another context, e.g. after sign-in. A different key drops the previous
    * context's values at once, so they're never shown to someone else: until the new values
-   * arrive, flags serve their defaults.
+   * arrive, flags serve the cache for that key if there is one, otherwise their defaults.
    * Resolves `true` once Signal's values for it are in, `false` if Signal couldn't be reached.
    */
   async identify(context: Context): Promise<boolean> {
     const switching = context.key !== this.currentContext.key;
     this.currentContext = context;
-    if (switching) this.apply({}, 'none');
+    if (switching) {
+      const cached = this.storage && readCache(this.storage, this.options.clientKey, context.key);
+      this.apply(cached ?? {}, cached ? 'cache' : 'none');
+    }
     await this.refresh();
     return this.evaluatedFor === context;
   }
@@ -245,11 +257,21 @@ export class SignalClient {
       if (context !== this.currentContext) return;
       this.evaluatedFor = context;
       this.apply(flags, 'server');
+      if (this.storage) writeCache(this.storage, this.options.clientKey, context.key, flags);
     } catch (error) {
       if (this.abort.signal.aborted) return;
       if (error instanceof InvalidKeyError) return this.fail(error);
       this.options.logger.warn(`[signal] evaluation failed: ${describeError(error)}`);
     }
+  }
+
+  private async start() {
+    // After the constructor returns, so listeners added right after it hear `ready`.
+    await Promise.resolve();
+    const cached =
+      this.storage && readCache(this.storage, this.options.clientKey, this.currentContext.key);
+    if (cached && this.source === 'none') this.apply(cached, 'cache');
+    await this.stream();
   }
 
   private apply(flags: ClientEvaluation['flags'], source: ClientDataSource) {
@@ -337,3 +359,4 @@ const isString = (v: FlagValue): v is string => typeof v === 'string';
 const isNumber = (v: FlagValue): v is number => typeof v === 'number';
 
 export type { Context, FlagValue, JsonValue } from '@signal/core';
+export type { ValueStorage } from './browser-cache.js';

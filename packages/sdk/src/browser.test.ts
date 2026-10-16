@@ -1,6 +1,6 @@
 import type { ClientEvaluation, Context, FlagValue } from '@signal/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { SignalClient } from './browser.js';
+import { SignalClient, type ValueStorage } from './browser.js';
 
 /**
  * A fake API: `/sdk/client/evaluate` answers from `values`, which the test may change per
@@ -46,11 +46,27 @@ function fakeServer(values: (context: Context) => Record<string, FlagValue>) {
 const quietLogger = { warn: () => {}, error: () => {} };
 let client: SignalClient | undefined;
 
-function connect(server: ReturnType<typeof fakeServer>, context: Context = { key: 'ayesha' }) {
+/** An in-memory stand-in for `localStorage`. */
+function memoryStorage(initial: Record<string, string> = {}) {
+  const items = new Map(Object.entries(initial));
+  return {
+    items,
+    getItem: (key: string) => items.get(key) ?? null,
+    setItem: (key: string, value: string) => void items.set(key, value),
+  };
+}
+
+function connect(
+  server: ReturnType<typeof fakeServer>,
+  context: Context = { key: 'ayesha' },
+  storage: ValueStorage | null = null,
+  clientKey = 'client-test',
+) {
   client = new SignalClient({
-    clientKey: 'client-test',
+    clientKey,
     baseUrl: 'http://flags.test/',
     context,
+    storage,
     fetch: server.fetch,
     logger: quietLogger,
     initialReconnectDelayMs: 1,
@@ -188,6 +204,87 @@ describe('SignalClient', () => {
       await flags.ready({ timeout: 500 });
       server.setStatus(503);
       expect(await flags.identify({ key: 'ayesha', plan: 'pro' })).toBe(false);
+      expect(flags.string('color', 'blue')).toBe('green');
+    });
+
+    it('starts from the values saved for the same user', async () => {
+      const storage = memoryStorage();
+      const online = fakeServer(() => ({ color: 'green' }));
+      const first = connect(online, { key: 'ayesha' }, storage);
+      await first.ready({ timeout: 500 });
+      expect(first.dataSource()).toBe('server');
+      first.close();
+
+      const offline = fakeServer(() => ({}));
+      offline.setStatus(503);
+      const flags = connect(offline, { key: 'ayesha' }, storage);
+      expect(await flags.ready({ timeout: 500 })).toBe(true);
+      expect(flags.dataSource()).toBe('cache');
+      expect(flags.string('color', 'blue')).toBe('green');
+    });
+
+    it('never serves saved values to another user or another key', async () => {
+      const storage = memoryStorage();
+      const first = connect(
+        fakeServer(() => ({ color: 'green' })),
+        { key: 'ayesha' },
+        storage,
+      );
+      await first.ready({ timeout: 500 });
+      first.close();
+
+      const offline = fakeServer(() => ({}));
+      offline.setStatus(503);
+      const otherUser = connect(offline, { key: 'bilal' }, storage);
+      expect(await otherUser.ready({ timeout: 50 })).toBe(false);
+      expect(otherUser.string('color', 'blue')).toBe('blue');
+      otherUser.close();
+
+      const otherKey = connect(offline, { key: 'ayesha' }, storage, 'client-other-env');
+      expect(await otherKey.ready({ timeout: 50 })).toBe(false);
+      expect(otherKey.string('color', 'blue')).toBe('blue');
+    });
+
+    it('switches back to saved values for the user they belong to', async () => {
+      const storage = memoryStorage();
+      const first = connect(
+        fakeServer(() => ({ who: 'ayesha' })),
+        { key: 'ayesha' },
+        storage,
+      );
+      await first.ready({ timeout: 500 });
+      first.close();
+
+      const offline = fakeServer(() => ({}));
+      offline.setStatus(503);
+      const flags = connect(offline, { key: 'ayesha' }, storage);
+      await flags.ready({ timeout: 500 });
+      expect(flags.string('who', 'nobody')).toBe('ayesha');
+
+      await flags.identify({ key: 'bilal' });
+      expect(flags.dataSource()).toBe('none');
+      expect(flags.string('who', 'nobody')).toBe('nobody');
+
+      await flags.identify({ key: 'ayesha' });
+      expect(flags.dataSource()).toBe('cache');
+      expect(flags.string('who', 'nobody')).toBe('ayesha');
+    });
+
+    it('works without storage, or with storage that throws', async () => {
+      const broken = {
+        getItem: () => {
+          throw new Error('blocked');
+        },
+        setItem: () => {
+          throw new Error('quota exceeded');
+        },
+      };
+      const flags = connect(
+        fakeServer(() => ({ color: 'green' })),
+        { key: 'ayesha' },
+        broken,
+      );
+      expect(await flags.ready({ timeout: 500 })).toBe(true);
       expect(flags.string('color', 'blue')).toBe('green');
     });
   });
