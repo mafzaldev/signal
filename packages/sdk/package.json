@@ -3,6 +3,11 @@
   "version": "1.0.0",
   "description": "TypeScript SDK for Signal, the release control platform: in-process evaluation, live updates and offline caching",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mafzaldev/signal.git",
+    "directory": "packages/sdk"
+  },
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -27,6 +32,9 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
