@@ -1,0 +1,49 @@
+name: Deploy site
+
+# Builds the landing page and docs and deploys them to Cloudflare Pages. Needs the
+# CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID secrets; the DASHBOARD_URL variable is optional.
+on:
+  push:
+    branches: [main]
+    paths: ['apps/site/**', 'pnpm-lock.yaml', '.github/workflows/deploy-site.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-site
+  cancel-in-progress: true
+
+env:
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+  PROJECT: signal-site
+  # Run through npx rather than cloudflare/wrangler-action, which installs Wrangler with pnpm
+  # into this workspace, where pnpm blocks the install script of its runtime (workerd).
+  WRANGLER: npx --yes wrangler@4.151.1
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @signal/site build
+        env:
+          PUBLIC_DASHBOARD_URL: ${{ vars.DASHBOARD_URL }}
+
+      # `pages deploy` can't ask to create a missing project in CI, so the first run creates it.
+      - name: Create the Pages project if it doesn't exist
+        run: |
+          if ! $WRANGLER pages project list | grep -qw "$PROJECT"; then
+            $WRANGLER pages project create "$PROJECT" --production-branch=main
+          fi
+
+      - name: Deploy
+        run: $WRANGLER pages deploy apps/site/dist --project-name="$PROJECT" --branch=main
