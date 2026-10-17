@@ -1,7 +1,7 @@
 ---
 import FlagTable from '../components/FlagTable.astro';
 import Base from '../layouts/Base.astro';
-import { links } from '../links';
+import { hasDashboard, links } from '../links';
 
 const steps = [
   {
@@ -105,7 +105,13 @@ const history = [
         </p>
         <div class="actions">
           <a href={links.signUp} class="button button-primary">Get started</a>
-          <a href="/docs/self-hosting" class="button button-secondary">Self-hosting guide</a>
+          {
+            hasDashboard && (
+              <a href="/docs/self-hosting" class="button button-secondary">
+                Self-hosting guide
+              </a>
+            )
+          }
         </div>
       </div>
     </section>

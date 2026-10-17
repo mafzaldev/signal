@@ -38,7 +38,13 @@ const path = Astro.url.pathname;
           {path === '/' && <a href="#release">A release</a>}
           {path === '/' && <a href="#history">History</a>}
           <a href={links.docs} aria-current={path.startsWith('/docs') ? 'page' : undefined}>Docs</a>
-          <a href={links.signIn} class="sign-in">Sign in</a>
+          {
+            links.signIn && (
+              <a href={links.signIn} class="sign-in">
+                Sign in
+              </a>
+            )
+          }
         </div>
       </nav>
     </header>
@@ -49,7 +55,7 @@ const path = Astro.url.pathname;
       <div class="container footer-inner">
         <div class="footer-links">
           <a href={links.docs}>Docs</a>
-          <a href={links.signIn}>Sign in</a>
+          {links.signIn && <a href={links.signIn}>Sign in</a>}
           <a href={links.signUp}>Get started</a>
         </div>
         <div class="wordmark" aria-hidden="true">Signal</div>
