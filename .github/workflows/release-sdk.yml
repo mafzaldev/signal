@@ -1,0 +1,73 @@
+name: Release SDK
+
+# Stages a new version of @mafzaldev/signal on npm when a tag like `sdk-v1.0.1` is pushed. The
+# tag must match the version in packages/sdk/package.json. Staging doesn't publish: the version
+# goes live only once a maintainer approves it with 2FA (`npm stage approve <id> --otp=<code>`).
+# Needs the NPM_TOKEN secret, a granular token with "Read and write (stage only)".
+on:
+  push:
+    tags: ['sdk-v*']
+
+permissions:
+  contents: read
+  # Lets npm sign a provenance statement linking the package to this public repository and build.
+  id-token: write
+
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+      - run: pnpm install --frozen-lockfile
+
+      - name: Check the tag matches the package version
+        run: |
+          version=$(node -p "require('./packages/sdk/package.json').version")
+          if [ "sdk-v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME doesn't match packages/sdk version $version" >&2
+            exit 1
+          fi
+
+      # Build first: the SDK's typecheck and tests read core's types from its built output.
+      - run: pnpm --filter @mafzaldev/signal... build
+      - run: pnpm --filter @signal/core --filter @mafzaldev/signal lint
+      - run: pnpm --filter @signal/core --filter @mafzaldev/signal typecheck
+      - run: pnpm --filter @signal/core --filter @mafzaldev/signal test
+
+      # pnpm turns the workspace-only versions in package.json into real ones as it packs.
+      - name: Pack
+        working-directory: packages/sdk
+        run: pnpm pack --pack-destination "$RUNNER_TEMP/package"
+
+      # Staging needs npm 11.15 or later, newer than the npm bundled with Node. npm writes its
+      # messages to stderr, so both streams are kept for the summary; pipefail makes the step
+      # fail when npm does, not just when `tee` does.
+      - name: Stage on npm
+        run: |
+          set -o pipefail
+          tarball=$(ls "$RUNNER_TEMP"/package/*.tgz)
+          npx --yes npm@latest stage publish "$tarball" --provenance 2>&1 | tee "$RUNNER_TEMP/stage.log"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Explain how to approve
+        run: |
+          {
+            echo "### $GITHUB_REF_NAME is staged on npm"
+            echo
+            echo "It isn't live yet. Approve it with your npm 2FA code, using the stage ID below:"
+            echo
+            echo '```'
+            echo 'npm stage approve <stage-id> --otp=<2FA code>'
+            echo '```'
+            echo
+            echo '```'
+            cat "$RUNNER_TEMP/stage.log"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
