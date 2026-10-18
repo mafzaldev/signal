@@ -153,6 +153,26 @@ describe('Client keys and the browser SDK API (e2e)', () => {
       expect(hidden.body.flags).not.toHaveProperty('internal-tool');
     });
 
+    it('sends a null variation instead of leaving the flag out', async () => {
+      await api()
+        .post('/projects/shop/flags')
+        .set('Cookie', cookie)
+        .send({
+          key: 'promo-banner',
+          name: 'Promo banner',
+          kind: 'json',
+          variations: [{ value: null }, { value: { text: 'Sale' } }],
+          clientSide: true,
+        })
+        .expect(201);
+      await configure('promo-banner', { enabled: true, fallthrough: { variation: 0 } });
+      const res = await evaluate({ key: 'u' }).expect(200);
+      expect(res.body.flags['promo-banner']).toMatchObject({
+        value: null,
+        reason: { kind: 'FALLTHROUGH' },
+      });
+    });
+
     it('validates the context', async () => {
       await evaluate({ country: 'PK' }).expect(400);
       await evaluate({ key: 'u', address: { city: 'Lahore' } }).expect(400);

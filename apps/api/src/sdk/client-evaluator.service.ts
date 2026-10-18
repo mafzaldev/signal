@@ -1,5 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { type ClientEvaluation, type Context, evaluate, type Ruleset } from '@signal/core';
+import {
+  type ClientEvaluation,
+  type Context,
+  evaluate,
+  type FlagValue,
+  type Ruleset,
+} from '@signal/core';
 import { RulesetService } from '../ruleset/ruleset.service.js';
 
 /** Evaluates an environment's client-side flags for one context, for browser SDKs. */
@@ -16,10 +22,11 @@ export class ClientEvaluator {
     for (const flag of Object.values(ruleset.flags)) {
       if (!flag.clientSide) continue;
       const result = evaluate(flag, context, ruleset.segments);
-      // A malformed flag is left out, so the browser serves its default value.
-      if (result.value === null) continue;
+      // A malformed flag is left out, so the browser serves its default value. A `null`
+      // value is not malformed: it's a valid JSON variation, such as "no banner".
+      if (result.reason.kind === 'ERROR') continue;
       flags[flag.key] = {
-        value: result.value,
+        value: result.value as FlagValue,
         variationIndex: result.variationIndex,
         reason: result.reason,
       };
