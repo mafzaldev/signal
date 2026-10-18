@@ -1,6 +1,4 @@
-<img src="apps/web/src/app/icon.svg" alt="" width="56" height="56">
-
-# Signal
+<h1><img src="apps/web/src/app/icon.svg" alt="" width="32" height="32" align="top"> Signal</h1>
 
 Signal is a self-hosted release control platform. Ship code dark, decide who sees it, roll it out by percentage and switch it off in under a second. Teams manage releases in a dashboard, and apps read them through a TypeScript SDK that evaluates in-process, updates live and keeps working when Signal is down.
 
@@ -154,6 +152,13 @@ packages/sdk    The SDK
 
 If `pnpm dev` fails with `ENOSPC` or "OS file watch limit reached", raise the limits with `sudo sysctl fs.inotify.max_user_watches=524288 fs.inotify.max_user_instances=512`.
 
+## Releases and deploys
+
+GitHub Actions checks every push and pull request (`ci.yml`). Two more workflows ship things:
+
+- **SDK:** push a tag like `sdk-v1.0.1` matching `packages/sdk/package.json`. The release workflow runs the checks and stages the version on npm; it goes live once a maintainer approves it with `npm stage approve <stage-id> --otp=<2FA code>`. Needs an `NPM_TOKEN` secret with "Read and write (stage only)".
+- **Site:** changes to `apps/site` on `main` deploy it to Cloudflare Pages. Needs the `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` secrets, and optionally a `DASHBOARD_URL` variable for the sign-in links.
+
 ## Status
 
-Done: the evaluation engine, the API with authentication, roles and the audit log, the dashboard (including members and invitations), email (account verification and invitations through any SMTP provider), SDK keys, live updates, the SDK's offline cache and fallbacks, the browser SDK with client keys, and the landing page with public docs. Next: publishing the SDK to npm and segments, then deployment and load testing. A/B testing with AI-written result summaries comes after that.
+Done: the evaluation engine, the API with authentication, roles and the audit log, the dashboard (including members and invitations), email (account verification and invitations through any SMTP provider), SDK keys, live updates, the SDK's offline cache and fallbacks, the browser SDK with client keys and its offline cache, the landing page with public docs, and workflows to release the SDK and deploy the site. Next: the first SDK release, hosting the API and dashboard, segments and load testing. A/B testing with AI-written result summaries comes after that.
