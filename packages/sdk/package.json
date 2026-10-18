@@ -1,7 +1,21 @@
 {
   "name": "@mafzaldev/signal",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "TypeScript SDK for Signal, the release control platform: in-process evaluation, live updates and offline caching",
+  "keywords": [
+    "feature-flags",
+    "feature-toggles",
+    "release-control",
+    "rollout",
+    "percentage-rollout",
+    "targeting",
+    "kill-switch",
+    "sse",
+    "self-hosted",
+    "sdk",
+    "typescript"
+  ],
+  "homepage": "https://signal.mafzal.dev",
   "license": "MIT",
   "repository": {
     "type": "git",
