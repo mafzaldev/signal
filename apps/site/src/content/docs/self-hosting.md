@@ -16,6 +16,8 @@ Signal is a monorepo with two services to run, the **API** and the **dashboard**
 ## Run it locally
 
 ```sh
+git clone https://github.com/mafzaldev/signal.git
+cd signal
 pnpm install
 pnpm db:up                                # Postgres, Redis and a local mail catcher
 pnpm --filter @signal/api db:migrate      # creates the tables

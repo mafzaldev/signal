@@ -7,6 +7,16 @@ section: SDKs
 
 Browser code can't be trusted with targeting rules: a list of user keys or an email-domain rule is private. So in the browser, Signal evaluates flags on its side and sends back only the results for the user you pass.
 
+## Install
+
+It's part of the same package as the server SDK, imported from `@mafzaldev/signal/browser`:
+
+```sh
+npm install @mafzaldev/signal
+```
+
+Bundlers such as Vite, webpack and Next.js include only the browser client, so the server-side evaluation code stays out of your page.
+
 ## Setup
 
 1. In project settings → SDK keys, create a key and choose **Client**. Client keys start with `client-` and are safe to ship in a web page: all they can do is ask for values.

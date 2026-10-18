@@ -8,4 +8,5 @@ export const links = {
   /** Signing up when there's a dashboard; otherwise setting Signal up yourself. */
   signUp: hasDashboard ? `${dashboardUrl}/sign-up` : '/docs/self-hosting',
   docs: '/docs/introduction',
+  github: 'https://github.com/mafzaldev/signal',
 };

@@ -11,7 +11,25 @@ The server SDK downloads an environment's rules, keeps them current over a live 
 - ESM and CommonJS, with TypeScript types
 - Node.js 18 or later
 
-> The package is named `@mafzaldev/signal` but isn't on npm yet. Until it is, build it from `packages/sdk` in the Signal repository.
+## Install
+
+```sh
+npm install @mafzaldev/signal
+```
+
+```sh
+pnpm add @mafzaldev/signal
+```
+
+```sh
+yarn add @mafzaldev/signal
+```
+
+```sh
+bun add @mafzaldev/signal
+```
+
+The same package holds the [browser SDK](/docs/browser-sdk).
 
 ## Quick start
 

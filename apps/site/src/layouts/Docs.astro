@@ -99,8 +99,10 @@ const next = pages[index + 1];
     overflow-y: auto;
   }
 
+  /* Indented like the link text, which sits inside its padded box. */
   .group-title {
     margin: 0 0 8px;
+    padding-inline: 12px;
     font-size: 13px;
     font-weight: 600;
     color: var(--muted);
@@ -117,11 +119,13 @@ const next = pages[index + 1];
 
   .sidebar a {
     display: block;
-    padding: 6px 10px;
-    margin-left: -10px;
-    border-radius: 6px;
+    padding: 7px 12px;
+    border-radius: 8px;
     color: var(--ink-2);
     text-decoration: none;
+    transition:
+      background-color 0.15s,
+      color 0.15s;
   }
 
   .sidebar a:hover {
@@ -285,6 +289,11 @@ const next = pages[index + 1];
     vertical-align: top;
     padding: 10px 14px;
     border-bottom: 1px solid var(--rule);
+  }
+
+  /* Names in the first column stay on one line; wide tables scroll inside their box. */
+  .prose :global(td:first-child) {
+    white-space: nowrap;
   }
 
   .prose :global(th) {

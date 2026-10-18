@@ -15,7 +15,8 @@ Signal is release control for your team. You put new code behind a **flag**, dec
 | **API**         | Stores flags and pushes every change to connected apps as it happens                                       |
 | **Server SDK**  | Runs in your backend. Downloads the rules once and evaluates flags in memory                               |
 | **Browser SDK** | Runs in web pages. Gets one user's values from the API, never the rules                                    |
-| Postgres, Redis | Postgres stores flags and history; Redis carries live updates between API instances                        |
+| **Postgres**    | Stores flags, members and the history of every change                                                      |
+| **Redis**       | Carries live updates between API instances                                                                 |
 
 Signal is self-hosted: you run the API, the dashboard, Postgres and Redis on your own infrastructure, so your flags and your users' attributes stay in your network.
 
